@@ -1,0 +1,360 @@
+\label{appendix:use-case-details}
+
+This appendix provides detailed problem specifications for the use cases introduced in Section 2. These comprehensive descriptions include facility characteristics, technical constraints, economic parameters, and optimization questions suitable for supporting bank financing applications and investment decisions.
+
+\subsection{Use Case 1: Industrial Manufacturing with Battery + PV Sizing}
+
+\subsubsection{Business Context}
+
+Large industrial manufacturing facilities represent significant opportunities for distributed energy investments. These facilities typically operate continuous or multi-shift production schedules with substantial electricity consumption in the range of 10-50 GWh annually. In the Czech market, such facilities face multiple cost drivers: energy consumption charges, reserved capacity fees (more than 200,000 CZK/MW/month for high-voltage connections), and increasingly volatile spot market prices.
+
+Industrial facilities often have large roof areas or adjacent land suitable for utility-scale photovoltaic installations (1-5 MWp range). The production schedule creates characteristic load patterns with predictable daily and weekly cycles, but also exhibits significant variability due to production planning, maintenance schedules, and market demand fluctuations. Peak loads can be 2-3 times higher than average consumption, driving substantial reserved capacity costs.
+
+Battery storage at industrial scale (1-10 MWh) offers multiple value streams: peak shaving to reduce reserved capacity contracts, energy arbitrage exploiting day-night price differentials, and integration with PV generation to maximize self-consumption while avoiding grid export limitations or unfavorable feed-in prices.
+
+\subsubsection{Technical Challenge}
+
+The optimization challenge involves determining economically optimal sizing across three interconnected decision variables: PV capacity (MWp), battery power rating (MW), and battery energy capacity (MWh). These parameters interact in complex ways. Large PV installations generate substantial midday power that may exceed instantaneous facility load, requiring either grid export (often at low prices) or battery storage for later use. Battery power rating determines how quickly energy can be moved in or out of storage, affecting both peak shaving capability and PV curtailment avoidance. Battery energy capacity determines storage duration, enabling longer time-shifts between cheap and expensive electricity periods.
+
+The facility's load profile exhibits multiple time scales of variation: intraday patterns (night/day production schedules), weekly patterns (weekday/weekend differences), seasonal patterns (production planning, heating/cooling loads), and stochastic variations (equipment failures, production changes). PV generation has its own patterns with daily cycles, seasonal variations, and weather-dependent fluctuations. Overlaying these patterns with time-of-use electricity tariffs and spot market price volatility creates a high-dimensional optimization space.
+
+Equipment degradation significantly impacts 20-year project economics. PV panels lose efficiency gradually (typically 0.5\% annually), while battery capacity degrades based on both cycling depth and total throughput. Frequent deep cycling accelerates degradation, requiring replacement investments that must be factored into economic analysis. Reserved capacity contracts typically require annual commitments with penalties for exceeding contracted levels, adding operational constraints that interact with battery dispatch strategies.
+
+\subsubsection{Example Problem: Automotive Components Manufacturer}
+
+Consider a large automotive components manufacturer with the following characteristics:
+
+\textbf{Current Energy Profile:}
+\begin{itemize}
+    \item Annual electricity consumption: 28 GWh
+    \item Peak demand: 4.2 MW (weekday afternoon during summer with air conditioning load)
+    \item Average load: 3.2 MW (24/7 operations with reduced weekend production)
+    \item Load factor: 76\% (relatively stable production)
+    \item Current reserved capacity contract: 4.5 MW (safety margin above peak)
+\end{itemize}
+
+\textbf{Current Costs:}
+\begin{itemize}
+    \item Energy charges: Average 3,200,000 EUR annually (0.114 EUR/kWh blended average)
+    \item Reserved capacity fee: 216,000 EUR annually (4.5 MW at 400 CZK/kW/month, approximately 4 EUR/kW/month)
+    \item Distribution and network charges: 580,000 EUR annually
+    \item Total annual electricity costs: Approximately 4,000,000 EUR
+\end{itemize}
+
+\textbf{Site Characteristics:}
+\begin{itemize}
+    \item Available roof area: 45,000 m² suitable for PV installation
+    \item Roof orientation: Mix of south, east, and west facing sections
+    \item Additional ground area: 2 hectares available for ground-mounted PV
+    \item Location: Central Czech Republic (Pardubice region)
+    \item Grid connection: High-voltage (22 kV) with upgrade capacity available
+\end{itemize}
+
+\textbf{Operational Constraints:}
+\begin{itemize}
+    \item Production operates 24/7 with reduced capacity on weekends (60\% of weekday production)
+    \item Annual shutdown for maintenance: 2 weeks in August (minimal load during this period)
+    \item Grid export limited to 1.5 MW by distribution system operator without costly grid reinforcement
+    \item Battery installation area available adjacent to transformer station
+    \item Project must maintain 99.9\% reliability (very low risk of exceeding reserved capacity)
+\end{itemize}
+
+\textbf{Economic Parameters:}
+\begin{itemize}
+    \item Technology costs: PV installation 700 EUR/kWp (economies of scale for large installation), Battery system 180 EUR/kWh + 120 EUR/kW
+    \item Project horizon: 20 years
+    \item Discount rate: 7\% (corporate cost of capital)
+    \item Electricity price forecast: Consultation firm proprietary model with expected 3\% annual escalation
+    \item Reserved capacity fee evolution: Expected stable in real terms
+\end{itemize}
+
+\textbf{Optimization Questions:}
+\begin{itemize}
+    \item What PV capacity maximizes economic value given roof/ground constraints and grid export limitations?
+    \item What battery power and energy capacity optimally balances peak shaving, PV integration, and energy arbitrage?
+    \item What reserved capacity level should be contracted with the distribution company?
+    \item What is the economic comparison between PV-only, Battery-only, and combined PV+Battery scenarios?
+    \item How sensitive are results to electricity price evolution and technology cost assumptions?
+    \item What is the optimal replacement strategy for battery degradation over 20-year horizon?
+\end{itemize}
+
+\subsection{Use Case 2: Large-Scale CHP + Heat Storage for Chemical Processing}
+
+\subsubsection{Business Context}
+
+Chemical processing, food production, pharmaceutical manufacturing, and similar industries require substantial process heat alongside electricity for production equipment. These facilities represent prime candidates for combined heat and power (CHP) systems, which generate electricity while capturing waste heat for industrial processes. In the Czech market, the economics of CHP depend critically on the ratio between electricity prices (typically 0.10-0.15 EUR/kWh) and natural gas prices (0.030-0.040 EUR/kWh), as well as the facility's ability to utilize both electricity and heat outputs simultaneously.
+
+Large industrial CHP installations (3-15 MW\textsubscript{el}) can achieve total efficiencies exceeding 85\%, compared to approximately 35\% for grid electricity and 90\% for standalone boilers. The economic advantage stems from displacing both grid electricity purchases and boiler fuel consumption with a single gas input. However, CHP units operate most efficiently at steady output, while facility demands vary hourly, daily, and seasonally.
+
+Thermal energy storage (heat accumulators) in the range of 10-100 MWh\textsubscript{th} enables decoupling CHP generation from instantaneous consumption. This provides operational flexibility to run CHP units during high electricity price periods (maximizing the value of displaced grid purchases or potential sales) while storing excess heat for later use during low-price periods or when CHP is offline for maintenance.
+
+\subsubsection{Technical Challenge}
+
+CHP sizing presents multi-dimensional optimization challenges. Electrical capacity determines both electricity generation potential and capital investment (typically 1,000-1,500 EUR/kW\textsubscript{el} for gas engine CHP). Heat output is coupled to electrical output through fixed heat-to-power ratios (typically 0.9-1.3 for gas engines, 1.5-2.5 for gas turbines with heat recovery). This coupling creates constraints: running CHP for electricity generation produces heat that must either be utilized immediately, stored, or wasted.
+
+Industrial load profiles exhibit complex temporal patterns. Electrical demand follows production schedules with intraday peaks, day/night variations, weekday/weekend differences, and seasonal production planning cycles. Heat demand has different drivers: process heat requirements tied to production, space heating correlated with weather, steam generation for cleaning and sterilization. These demands are rarely perfectly synchronized, creating challenges for CHP utilization.
+
+CHP operational constraints further complicate optimization. Units have minimum stable operating points (typically 40-50\% of rated capacity), below which efficiency degrades severely. Start-up and shutdown impose wear costs and time delays (30-120 minutes for gas engines). Frequent cycling accelerates maintenance requirements. Part-load operation reduces electrical efficiency but may be necessary to match heat demands.
+
+Heat accumulator sizing involves tradeoffs between capital cost (60-100 EUR/kWh\textsubscript{th} for large pressurized hot water storage) and operational flexibility. Larger storage enables longer time-shifts between CHP generation and heat consumption, but requires larger capital investment and incurs thermal losses (typically 1-3\% per day). The optimization must determine both CHP capacity and accumulator size simultaneously, as these parameters interact strongly.
+
+\subsubsection{Example Problem: Chemical Processing Facility}
+
+Consider a large chemical processing facility with the following characteristics:
+
+\textbf{Current Energy Profile:}
+\begin{itemize}
+    \item Annual electricity consumption: 45 GWh (base load 4.8 MW, peak 6.5 MW)
+    \item Annual heat consumption: 120 GWh\textsubscript{th} (average 13.7 MW\textsubscript{th}, winter peak 22 MW\textsubscript{th})
+    \item Process heat temperature requirements: 180°C steam (90\% of heat demand)
+    \item Space heating: 140°C hot water (10\% of heat demand, seasonal)
+    \item Load characteristics: Continuous operations with 85\% production factor (scheduled shutdowns)
+\end{itemize}
+
+\textbf{Current Costs:}
+\begin{itemize}
+    \item Electricity: 5,400,000 EUR annually (average 0.12 EUR/kWh with time-of-use variation 0.08-0.18 EUR/kWh)
+    \item Natural gas for boilers: 3,600,000 EUR annually (120 GWh\textsubscript{th} / 0.90 efficiency = 133 GWh gas at 0.027 EUR/kWh)
+    \item Reserved capacity: 6.5 MW at 400 CZK/kW/month = 312,000 EUR annually
+    \item Total current energy costs: Approximately 9,300,000 EUR annually
+\end{itemize}
+
+\textbf{Site and Infrastructure:}
+\begin{itemize}
+    \item Existing boiler plant: 30 MW\textsubscript{th} steam boilers (will remain as backup)
+    \item CHP installation area: Adjacent to existing boiler house with infrastructure available
+    \item Natural gas connection: 15 MW capacity (sufficient for CHP addition)
+    \item Electrical connection: 22 kV with capacity for CHP interconnection
+    \item Steam distribution network: Existing 15 bar steam system
+    \item Cooling water availability: River water available for CHP cooling (environmental permits in place)
+\end{itemize}
+
+\textbf{Operational Patterns and Constraints:}
+\begin{itemize}
+    \item Production schedule: Continuous 24/7 with annual shutdown in July (3 weeks, minimal loads)
+    \item Electrical load pattern: Relatively flat base load 4.8 MW with production equipment cycling adding 0-1.7 MW
+    \item Heat demand pattern: Strong seasonal variation (winter 18-22 MW\textsubscript{th}, summer 10-14 MW\textsubscript{th})
+    \item Weekend operations: Reduced to 70\% of weekday production
+    \item Reliability requirements: N-1 redundancy for heat supply (CHP failure cannot disrupt production)
+    \item Environmental permits: NOx emissions limits affect CHP technology selection
+\end{itemize}
+
+\textbf{Technology Options Under Consideration:}
+\begin{itemize}
+    \item Gas engine CHP: 40\% electrical efficiency, 45\% thermal efficiency, heat-to-power ratio 1.12
+    \item Installation costs: 1,250 EUR/kW\textsubscript{el} (including steam integration)
+    \item Maintenance costs: 0.012 EUR/kWh\textsubscript{el} generated
+    \item Heat accumulator: Pressurized hot water (180°C), 85 EUR/kWh\textsubscript{th} installed cost
+    \item Expected lifetime: CHP 20 years with major overhaul at year 10 (30\% of initial capital cost)
+\end{itemize}
+
+\textbf{Economic Parameters:}
+\begin{itemize}
+    \item Discount rate: 8\% (corporate cost of capital for industrial projects)
+    \item Price forecasts: Consultation firm proprietary models for electricity (3\%/year growth) and gas (2\%/year growth)
+    \item Grid feed-in option: Possible during low facility demand, but price only 70\% of grid purchase price
+    \item Project horizon: 20 years
+    \item Financing: Mix of equity and bank loan (requires robust NPV and IRR analysis)
+\end{itemize}
+
+\textbf{Optimization Questions:}
+\begin{itemize}
+    \item What CHP electrical capacity optimally balances capital cost against energy savings?
+    \item What heat accumulator capacity provides optimal operational flexibility?
+    \item Should CHP be sized for electrical base load, heat base load, or some intermediate value?
+    \item What operational strategy maximizes economic value: heat-following, electricity-following, or hybrid dispatch?
+    \item How should CHP dispatch respond to time-varying electricity prices versus stable gas prices?
+    \item What is the economic value of grid feed-in capability compared to self-consumption focus?
+    \item What reserved capacity level should be maintained given CHP as partial on-site generation?
+    \item How sensitive is project economics to electricity/gas price ratio evolution?
+    \item What configuration minimizes total energy costs over 20 years while maintaining reliability?
+    \item Should investment proceed with single large CHP unit or multiple smaller units for operational flexibility?
+\end{itemize}
+
+\subsection{Use Case 3: Multi-MW Battery Storage with aFRR Grid Services}
+
+\subsubsection{Business Context}
+
+Large industrial and commercial facilities with substantial electricity consumption increasingly consider battery energy storage systems (BESS) that combine on-site energy management with grid service revenues. In the Czech market, automatic frequency restoration reserve (aFRR) represents a significant revenue opportunity for battery systems meeting minimum technical requirements. aFRR maintains grid frequency within acceptable limits by automatically responding to frequency deviations.
+
+Industrial-scale BESS installations (2-10 MW / 4-20 MWh) can generate multiple value streams simultaneously: peak shaving to reduce facility reserved capacity fees, energy arbitrage exploiting spot market price volatility, and aFRR capacity and energy payments. The Czech aFRR market requires minimum 1 MW bid size, making large facilities with multi-MW battery installations direct market participants. aFRR capacity payments range 3-50 EUR/MW/hour depending on market conditions.
+
+\subsubsection{Technical Challenge}
+
+The optimization challenge involves sizing battery capacity (MWh) and power rating (MW) to maximize total economic value across competing objectives. Facility energy management seeks to minimize electricity costs through peak shaving and arbitrage. aFRR market participation seeks to maximize grid service revenues. These create complex tradeoffs: capacity reserved for aFRR cannot serve facility energy management.
+
+Battery degradation modeling significantly impacts 20-year project economics. aFRR activation patterns create cycling behavior different from optimized facility dispatch. Historical data shows aFRR activation occurs in 15-30\% of hours, with durations ranging from 15 minutes to several hours. This creates deep cycling that accelerates capacity fade compared to controlled facility dispatch.
+
+State-of-charge management presents operational challenges. aFRR participation requires maintaining sufficient margin to respond to activation commands in both directions. For symmetric aFRR products, batteries must maintain approximately 50\% state-of-charge, creating opportunity costs when electricity prices would favor different targets.
+
+\subsubsection{Example Problem: Large Industrial Facility}
+
+Consider a large industrial facility evaluating battery energy storage with aFRR participation:
+
+\textbf{Facility Energy Profile:}
+\begin{itemize}
+    \item Annual consumption: 62 GWh
+    \item Peak demand: 8.5 MW (summer afternoon with production and cooling loads)
+    \item Base load: 6.2 MW (continuous process operations)
+    \item Current reserved capacity: 9.0 MW (includes safety margin)
+    \item Load variability: Production equipment cycling creates 1-2 MW variations around base load
+\end{itemize}
+
+\textbf{Current Electricity Costs:}
+\begin{itemize}
+    \item Energy charges: 7,400,000 EUR annually (average 0.119 EUR/kWh)
+    \item Spot price volatility: Range 0.06-0.22 EUR/kWh with occasional negative prices
+    \item Reserved capacity fee: 432,000 EUR annually (9.0 MW at 400 CZK/kW/month)
+    \item Total electricity costs: Approximately 7,800,000 EUR annually
+\end{itemize}
+
+\textbf{Battery Technology Parameters:}
+\begin{itemize}
+    \item Lithium-ion battery system: Containerized outdoor installation
+    \item Power rating range: 2-8 MW under consideration
+    \item Energy capacity range: 4-16 MWh under consideration
+    \item Round-trip efficiency: 88\% (AC-to-AC)
+    \item Response time: Less than 1 second (suitable for aFRR requirements)
+    \item Installation costs: 170 EUR/kWh + 110 EUR/kW (including grid interconnection)
+    \item Maintenance: 15,000 EUR/MW/year fixed O\&M
+    \item Warranty: 15 years or 6,000 equivalent full cycles
+    \item Expected degradation: 80\% capacity retention at warranty end under optimal cycling
+    \item Accelerated degradation: aFRR cycling reduces warranty period by approximately 20\%
+\end{itemize}
+
+\textbf{aFRR Market Parameters (Czech Republic):}
+\begin{itemize}
+    \item Minimum bid size: 1 MW (facility can participate directly)
+    \item Capacity payment: Historical average 75 CZK/MW/hour (range 40-140 CZK/MW/hour)
+    \item Energy payment: Spot price + 400 CZK/MWh premium when activated
+    \item Activation frequency: Approximately 25\% of hours based on historical data
+    \item Activation duration: Typically 30-90 minutes per activation
+    \item State-of-charge requirements: Must maintain capability for committed capacity in both directions
+    \item Penalties: Failure to respond incurs penalties (must ensure high availability)
+\end{itemize}
+
+\textbf{Economic and Financial Parameters:}
+\begin{itemize}
+    \item Project horizon: 20 years (includes battery replacement at years 10 and 15)
+    \item Discount rate: 9\% (reflecting project risk profile)
+    \item Price forecasts: Consultation firm proprietary models for electricity and aFRR market evolution
+    \item Financing requirement: Bank financing requires detailed cash flow projections and risk analysis
+\end{itemize}
+
+\textbf{Optimization Questions:}
+\begin{itemize}
+    \item What battery power rating and energy capacity maximizes NPV considering all value streams?
+    \item What portion of battery capacity should be allocated to aFRR versus facility energy management?
+    \item Should aFRR participation be continuous (all hours) or selective (only high-price hours)?
+    \item How does aFRR revenue compare to facility-only optimization?
+    \item What impact does accelerated degradation from aFRR cycling have on project economics?
+    \item What reserved capacity reduction is achievable with battery peak shaving capability?
+    \item How sensitive are results to aFRR capacity price evolution and activation frequency?
+    \item What operational strategy maximizes economic value while ensuring aFRR compliance?
+    \item Should battery be oversized to compensate for degradation-related capacity loss?
+    \item What is the optimal battery replacement schedule considering degradation and technology cost evolution?
+\end{itemize}
+
+\subsection{Use Case 4: Integrated Multi-Technology System}
+
+\subsubsection{Business Context}
+
+The most complex optimization scenarios involve facilities that can benefit from multiple complementary technologies: photovoltaic generation, battery storage, and combined heat and power. Large industrial facilities with both significant electricity and heat demands represent ideal candidates for integrated multi-technology solutions. These systems can achieve synergies that exceed the sum of individual technology benefits.
+
+The Czech market presents favorable conditions for multi-technology systems. High electricity prices (0.10-0.15 EUR/kWh), moderate gas prices (0.03-0.04 EUR/kWh), declining PV costs (now below 700 EUR/kWp for large installations), and improving battery economics create opportunities for economically optimal integrated systems. However, system complexity increases dramatically, requiring sophisticated analysis tools.
+
+Investment decisions for multi-technology systems involve larger capital outlays (often 5-15 million EUR for large industrial installations) and greater complexity compared to single-technology projects. Banks require detailed technical and economic analysis demonstrating robust returns across various scenario assumptions.
+
+\subsubsection{Technical Challenge}
+
+Multi-technology system optimization requires simultaneous sizing decisions across multiple interconnected variables: PV capacity (MWp), battery power and energy (MW/MWh), CHP electrical capacity (MW\textsubscript{el}), heat accumulator thermal capacity (MWh\textsubscript{th}), and grid connection reserved capacity (MW). These parameters interact through complex physical and economic coupling.
+
+PV generation patterns influence optimal battery sizing. Large PV installations create substantial midday generation requiring either battery storage or grid export at potentially unfavorable prices. CHP operation interacts with both PV and battery systems. Battery charging from PV affects state-of-charge, influencing availability for peak shaving when both facility load and electricity prices may be elevated.
+
+Heat accumulator sizing couples strongly with CHP capacity decisions. Larger CHP units operating more hours require larger heat storage to accommodate periods when heat production exceeds instantaneous demand. However, larger heat storage enables more flexible CHP dispatch based on electricity price signals rather than heat demand constraints.
+
+Degradation modeling requires tracking multiple technology-specific mechanisms over 20-year horizons. PV panels lose approximately 0.5\% capacity annually. Battery capacity degrades based on throughput and cycling depth, potentially requiring replacement at years 10-15. CHP engines require major overhauls at year 10-12 (approximately 30\% of initial capital cost). Economic analysis must account for these different patterns, including optimal replacement timing.
+
+\subsubsection{Example Problem: Food Processing Facility}
+
+Consider a large food processing facility evaluating an integrated energy system:
+
+\textbf{Current Energy Profile:}
+\begin{itemize}
+    \item Electricity consumption: 38 GWh annually (base 4.1 MW, peak 5.8 MW)
+    \item Heat consumption: 85 GWh\textsubscript{th} annually (average 9.7 MW\textsubscript{th}, winter peak 16 MW\textsubscript{th})
+    \item Process heat: 160°C steam for cooking, pasteurization, cleaning (year-round demand)
+    \item Space heating: Seasonal demand for production halls and administrative areas
+    \item Current reserved capacity: 6.0 MW
+\end{itemize}
+
+\textbf{Current Energy Costs:}
+\begin{itemize}
+    \item Electricity: 4,900,000 EUR annually (average 0.129 EUR/kWh with time-of-use variation)
+    \item Natural gas: 2,550,000 EUR annually (85 GWh\textsubscript{th} / 0.90 boiler efficiency at 0.030 EUR/kWh)
+    \item Reserved capacity: 288,000 EUR annually (6.0 MW at 400 CZK/kW/month)
+    \item Total current energy costs: 7,700,000 EUR annually
+\end{itemize}
+
+\textbf{Site Characteristics and Available Resources:}
+\begin{itemize}
+    \item Building roof area: 62,000 m² suitable for PV installation (primarily south-facing)
+    \item Additional ground area: 1.5 hectares available for ground-mounted PV
+    \item Location: South Moravia region (favorable solar resource)
+    \item Grid connection: 22 kV high-voltage with capacity for generation interconnection
+    \item Existing steam system: 12 bar steam distribution with 25 MW\textsubscript{th} gas boilers
+    \item Natural gas capacity: Adequate for CHP addition
+    \item Battery and CHP installation area: Available adjacent to electrical substation and boiler house
+\end{itemize}
+
+\textbf{Facility Operational Patterns:}
+\begin{itemize}
+    \item Production: Two-shift operations weekdays (6:00-22:00), single shift weekends
+    \item Seasonal patterns: Higher production in summer (agricultural product processing), reduced winter
+    \item Heat demand: Base load 7.0 MW\textsubscript{th} (cleaning, pasteurization), variable production heat 2-9 MW\textsubscript{th}
+    \item Electrical load: Relatively stable during production shifts, reduced overnight to 2.5 MW base load
+    \item Annual shutdown: 3 weeks in December-January for maintenance and equipment upgrades
+\end{itemize}
+
+\textbf{Technology Options and Costs:}
+\begin{itemize}
+    \item PV installation: 680 EUR/kWp for roof-mounted, 720 EUR/kWp for ground-mounted
+    \item Battery system: 175 EUR/kWh + 115 EUR/kW (containerized lithium-ion with grid interconnection)
+    \item Gas engine CHP: 1,200 EUR/kW\textsubscript{el} (including steam integration), 40\% electrical, 45\% thermal efficiency
+    \item Heat accumulator: 80 EUR/kWh\textsubscript{th} for pressurized hot water system
+    \item Maintenance: PV 8,000 EUR/MW/year, Battery 12,000 EUR/MW/year, CHP 0.011 EUR/kWh\textsubscript{el} generated
+\end{itemize}
+
+\textbf{Economic and Financial Parameters:}
+\begin{itemize}
+    \item Project horizon: 20 years
+    \item Discount rate: 7.5\% (corporate cost of capital)
+    \item Price forecasts: Consultation firm proprietary models (electricity +3.5\%/year, gas +2\%/year in real terms)
+    \item Grid export: Possible at 75\% of spot purchase price
+    \item Financing: Bank loan requires NPV-positive business case with sensitivity analysis
+    \item Investment budget: Maximum 8,000,000 EUR available for energy system upgrade
+\end{itemize}
+
+\textbf{Regulatory and Environmental Constraints:}
+\begin{itemize}
+    \item Grid export limit: 2 MW without costly grid reinforcement
+    \item CHP emissions: NOx limits affect technology selection and require selective catalytic reduction
+    \item PV building permits: Roof-mounted approved, ground-mounted requires land use permit
+    \item Food safety: Energy system changes must not compromise process reliability or food safety
+\end{itemize}
+
+\textbf{Optimization Questions:}
+\begin{itemize}
+    \item What combination of technologies (PV, Battery, CHP, Heat Storage) maximizes NPV within budget constraint?
+    \item What are optimal sizes for each technology if all four are included?
+    \item How do economics compare between different technology combinations?
+    \item What reserved capacity level is optimal considering multiple generation and storage assets?
+    \item How should battery be split between PV integration, peak shaving, and energy arbitrage functions?
+    \item What CHP sizing strategy is optimal: size for heat demand, electrical demand, or intermediate value?
+    \item How does system performance vary with PV capacity given grid export limitations?
+    \item What operational strategy maximizes value: CHP base load, CHP following prices, or hybrid dispatch?
+    \item How sensitive are results to electricity/gas price ratio evolution over 20-year horizon?
+    \item What is the incremental value of each technology?
+    \item Should system be implemented in phases or as integrated project?
+    \item What are optimal technology replacement schedules considering different lifetimes and degradation patterns?
+\end{itemize}

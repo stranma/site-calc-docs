@@ -1,0 +1,45 @@
+\section*{Executive Summary}
+\addcontentsline{toc}{section}{Executive Summary}
+
+\subsection*{Purpose and Value Proposition}
+
+The Site Energy System Optimization Platform is a decision support tool for energy consultants working with commercial and industrial clients on distributed energy resource investments. The platform determines optimal sizing, configuration, and economic viability of energy systems combining renewable generation (photovoltaics, wind), energy storage (batteries, heat accumulators), cogeneration (combined heat and power - CHP), and grid services (frequency regulation, peak shaving).
+
+The platform provides economic analysis (NPV, IRR, ROI) and optimal technology sizing for investment decisions and bank loan applications with 20+ year project horizons. Technology capacities and powers are treated as decision variables rather than fixed inputs, allowing the system to identify optimal configurations.
+
+\subsection*{Target Users and Use Cases}
+
+\subsubsection*{Primary Users}
+
+Energy consultants at large consultation firms serving commercial and industrial clients use the platform to evaluate multiple technology scenarios, generate economic projections for financing applications and optimize system sizing for client-specific constraints.
+
+\subsubsection*{End Beneficiaries}
+
+Facility owners and operators benefit from the analysis through reduced energy costs, increased energy independence, monetization of grid service opportunities, and support for investment decisions and project financing.
+
+\subsubsection*{Core Use Cases}
+
+\begin{enumerate}
+    \item \textbf{Battery + PV Sizing}: Determine optimal photovoltaic capacity and battery storage size for commercial buildings to maximize ROI through energy cost reduction and grid service revenues
+    \item \textbf{CHP + Heat Storage}: Optimize combined heat and power unit sizing with thermal storage for industrial facilities with significant heat demand
+    \item \textbf{Multi-Technology Comparison}: Compare economic performance of different technology combinations (PV+Battery vs. CHP+Storage vs. hybrid solutions)
+    \item \textbf{Grid Service Revenue Optimization}: Evaluate revenue potential from frequency regulation (aFRR) markets alongside traditional energy cost savings.
+    \item \textbf{Grid connection optimization}: Compute optimal reserved power together with technology (e.g.\ peak shaving Battery).
+    \item \textbf{Combination of previous}: Can combine all the above-mentioned optimizations.
+\end{enumerate}
+
+\subsection*{Key Capabilities Overview}
+
+The platform performs sizing optimization with technology capacities and powers as decision variables, and operational optimization with custom-timed dispatch over annual time horizons. The system handles multi-material flows (electricity, heat, gas) simultaneously through a solver-independent architecture supporting multiple optimization engines (CBC, HiGHS, Gurobi).
+
+Economic analysis includes investment costs (CAPEX) with economies of scale, operating costs (maintenance, fuel, grid fees, degradation), and revenue streams (energy sales, grid services, avoided costs). Financial metrics cover NPV, IRR, ROI, payback period, and sensitivity analysis. The platform integrates Czech market specifics including distribution tariffs, reserved capacity fees, and aFRR market rules.
+
+The platform provides three access methods: a REST API for programmatic access and Monte Carlo framework integration, a Python client library (\texttt{pip install site-calc-client}) with high-level device abstractions, and a web application for interactive configuration and reporting.
+
+If client requires, the service may run in a trusted third-party disconnected environment to prove client data are completely safe and anonymously processed.
+
+\subsection*{Expected Business Outcomes}
+
+Consultation companies can expect faster project analysis (from days to hours), standardized reproducible methodology, and enhanced proposal quality. The platform eliminates the need to develop and maintain optimization code internally while providing universal and capable optimization capabilities. The Python client allows consultants to input their own data and programmatically generate large number of candidate solutions for comparison, keeping core knowledge and data within the consultation company rather than relying on external predictions or fixed models.
+
+End clients benefit from optimized investment decisions, reduced financial risk through better sizing, and realistic economic projections for business cases and financing institutions.

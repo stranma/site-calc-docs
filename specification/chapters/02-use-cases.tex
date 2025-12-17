@@ -1,0 +1,75 @@
+\section{Use Cases}
+
+\subsection{Workflow Context}
+
+Before examining specific use cases, it is important to understand the complete analytical workflow and the platform's role within it. Energy system optimization for investment decisions is a multi-step process involving data preparation, scenario development, optimization, and results analysis. The platform performs deterministic optimization given input data, while consultation firms retain control over forecasting methods and proprietary analytical approaches.
+
+The typical workflow proceeds as follows. The consultation firm begins with facility assessment, gathering metering data for electricity consumption and heat demand, understanding operational patterns and constraints, and identifying candidate technologies (PV, battery, CHP, etc.). The firm then develops price scenarios using their proprietary forecasting methods. This includes electricity spot price forecasts for the project horizon (typically 20 years), grid tariff evolution (distribution charges, reserved capacity fees), fuel price forecasts for CHP analysis, and grid service market prices (aFRR capacity and energy payments). These forecasts represent the consultation firm's core expertise and competitive advantage.
+
+With load data and price scenarios prepared, the consultation firm submits optimization requests to the platform. For photovoltaic systems, the platform automatically retrieves weather-based generation profiles from PVGIS based on location and panel specifications, eliminating manual data preparation. The platform then performs sizing and operational optimization, determining optimal technology capacities, hourly dispatch schedules, and comprehensive economic analysis. Results are returned to the consultation firm including optimal sizing recommendations, NPV, IRR, ROI, cash flow projections, and operational profiles.
+
+The consultation firm analyzes results across multiple price scenarios (often 1,000+ scenarios for Monte Carlo analysis), performs sensitivity analysis, compares alternative technology configurations, and generates reports for end clients and financing institutions. This workflow separation is deliberate: the platform provides optimization capabilities while consultation firms maintain their forecasting expertise, proprietary methods, and client data.
+
+\subsection{Use Case 1: Industrial Manufacturing with Battery + PV Sizing}
+
+\subsubsection{Business Context}
+
+Large industrial manufacturing facilities with 10-50 GWh annual electricity consumption face multiple cost drivers: energy consumption charges, reserved capacity fees (more than 200,000 CZK/MW/month), and volatile spot market prices. These facilities typically have suitable areas for utility-scale PV installations (1-5 MWp) and experience peak loads 2-3 times higher than average consumption, driving substantial reserved capacity costs.
+
+Battery storage at industrial scale (1-10 MWh) offers multiple value streams: peak shaving to reduce reserved capacity contracts, energy arbitrage exploiting price differentials, and integration with PV generation to maximize self-consumption while avoiding unfavorable grid export prices.
+
+\subsubsection{Technical Challenge}
+
+The optimization determines economically optimal sizing across three interconnected variables: PV capacity (MWp), battery power rating (MW), and battery energy capacity (MWh). Load profiles exhibit multiple time scales of variation (intraday, weekly, seasonal) while PV generation has daily, seasonal, and weather-dependent fluctuations. Equipment degradation significantly impacts 20-year project economics: PV panels lose efficiency gradually (0.5\% annually), while battery capacity degrades based on cycling depth and throughput, requiring replacement investments.
+
+\subsubsection{Representative Scale}
+
+Typical facility: 20-30 GWh annual consumption, 3-5 MW peak demand. Detailed specification in Appendix~\ref{appendix:use-case-details}.
+
+\subsection{Use Case 2: Large-Scale CHP + Heat Storage for Chemical Processing}
+
+\subsubsection{Business Context}
+
+Chemical processing, food production, and pharmaceutical manufacturing facilities require substantial process heat alongside electricity. Large industrial CHP installations (3-15 MW\textsubscript{el}) can achieve total efficiencies exceeding 85\%, displacing both grid electricity and boiler fuel consumption. However, CHP units operate most efficiently at steady output while facility demands vary hourly, daily, and seasonally.
+
+Thermal energy storage (10-100 MWh\textsubscript{th}) enables decoupling CHP generation from instantaneous consumption, providing flexibility to run CHP during high electricity price periods while storing excess heat for later use.
+
+\subsubsection{Technical Challenge}
+
+The optimization determines CHP electrical capacity and heat accumulator size simultaneously. Heat output is coupled to electrical output through fixed heat-to-power ratios (0.9-1.3 for gas engines), creating constraints where electricity generation produces heat that must be utilized, stored, or wasted. CHP operational constraints include minimum stable operating points (40-50\% of rated capacity), start-up delays (30-120 minutes), and part-load efficiency degradation. Heat accumulator sizing balances capital cost against operational flexibility and thermal losses (1-3\% per day).
+
+\subsubsection{Representative Scale}
+
+Typical facility: 40-50 GWh electricity, 100-150 GWh\textsubscript{th} heat annually. Detailed specification in Appendix~\ref{appendix:use-case-details}.
+
+\subsection{Use Case 3: Multi-MW Battery Storage with aFRR Grid Services}
+
+\subsubsection{Business Context}
+
+Large industrial facilities increasingly consider battery energy storage systems (2-10 MW / 4-20 MWh) that combine on-site energy management with grid service revenues. In the Czech market, automatic frequency restoration reserve (aFRR) represents a significant revenue opportunity. The Czech aFRR market requires minimum 1 MW bid size, making large facilities direct market participants.
+
+aFRR capacity payments (3-50 EUR/MW/hour) compensate asset owners for making capacity available to the system operator. However, capacity committed to aFRR markets cannot simultaneously serve facility energy management, creating opportunity cost tradeoffs.
+
+\subsubsection{Technical Challenge}
+
+The optimization sizes battery capacity (MWh) and power rating (MW) to maximize total economic value across competing objectives: facility energy management (peak shaving, arbitrage) versus aFRR market participation (grid service revenues). Optimal strategies must dynamically allocate battery capacity based on facility load patterns, spot electricity prices, and aFRR capacity prices.
+
+Battery degradation modeling significantly impacts 20-year economics. aFRR activation patterns create deep cycling that accelerates capacity fade compared to controlled facility dispatch. State-of-charge management adds complexity: symmetric aFRR products require maintaining approximately 50\% state-of-charge to provide equal capacity for frequency support in both directions.
+
+\subsubsection{Representative Scale}
+
+Typical facility: 50-70 GWh annual consumption, 7-9 MW peak demand. Detailed specification in Appendix~\ref{appendix:use-case-details}.
+
+\subsection{Cross-Cutting Capabilities}
+
+\subsubsection{Scenario Comparison}
+
+The platform enables side-by-side comparison of alternative technology configurations with identical load and price assumptions. Economic metrics (NPV, IRR, ROI), optimal sizing, and operational patterns are presented in comparable format, enabling clients to understand tradeoffs between alternatives. This capability is essential for investment decisions where multiple technology paths are viable.
+
+\subsubsection{Sensitivity Analysis}
+
+All use cases benefit from sensitivity analysis examining electricity price evolution, technology cost reductions, discount rate variations, and degradation rate assumptions. The platform automatically generates sensitivity analyses, quantifying parameter impacts on economic outcomes for risk assessment and robust decision-making.
+
+\subsubsection{Monte Carlo Integration}
+
+For sophisticated risk analysis, consultation firms integrate the platform into Monte Carlo frameworks. The firm generates many price scenarios (1,000+ representing long-term uncertainty), calls the optimization API for each scenario, and aggregates results to compute probability distributions of NPV, IRR, and sizing recommendations. The platform's computational efficiency enables processing individual scenarios in minutes, supporting large-scale Monte Carlo analysis within reasonable timeframes.

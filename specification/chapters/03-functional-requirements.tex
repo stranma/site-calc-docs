@@ -1,0 +1,1469 @@
+\section{Functional Requirements}
+
+This section describes the functional requirements for the Site Energy System Optimization Platform, progressing from high-level capabilities to detailed functional specifications. Requirements are organized by major subsystem: optimization engine, input data management, economic analysis, results and reporting, REST API, Python client library, and web interface.
+
+\subsection{Optimization Engine}
+
+The optimization engine is the core computational component that determines optimal technology sizing and operational schedules. The engine must support multi-material flow optimization, handle both sizing and dispatch decisions simultaneously, and provide solver-independent operation.
+
+\subsubsection{Technology Sizing Optimization}
+
+\textbf{FR-OPT-001: Variable Capacity Optimization}
+
+The system shall treat technology capacities as optimization decision variables, not fixed inputs. For each supported device type, the optimizer shall determine economically optimal sizing within user-specified bounds.
+
+Supported sizing variables:
+\begin{itemize}
+\item Photovoltaic capacity (kWp): 0 to maximum site constraint
+\item Battery energy capacity (kWh): 0 to maximum site constraint
+\item Battery power rating (kW): 0 to maximum site constraint
+\item CHP electrical capacity (MW): 0 to maximum site constraint
+\item Heat accumulator thermal capacity (kWh\textsubscript{th}): 0 to maximum site constraint
+\item Grid connection reserved power (kW): minimum contractual to maximum physical
+\end{itemize}
+
+Users shall specify bounds for each variable. The optimizer returns optimal values or boundary values when constraints are active.
+
+\textbf{FR-OPT-002: Economies of Scale Modeling}
+
+Investment costs shall reflect realistic economies of scale using power-law relationships: $C = a \times P^b$ where $b < 1$. Users specify cost coefficients $(a, b)$ for each technology. This ensures larger installations receive appropriate per-unit cost reductions.
+
+\textbf{FR-OPT-003: Size-Power Decoupling}
+
+For battery storage, energy capacity (kWh) and power rating (kW) shall be independently optimizable. This enables the system to find optimal C-rates (power-to-capacity ratios) for different applications: high C-rates for peak shaving (1C-2C), low C-rates for energy arbitrage (0.25C-0.5C).
+
+\subsubsection{Operational Optimization}
+
+\textbf{FR-OPT-004: Hourly Dispatch Scheduling}
+
+The system shall optimize operational schedules with hourly time resolution over annual time horizons (8,760 hours). Dispatch decisions include:
+\begin{itemize}
+\item Battery charge/discharge power each hour
+\item CHP electrical output each hour
+\item Grid import/export each hour
+\item Heat accumulator charge/discharge each hour
+\item Grid service capacity reservation each hour (aFRR)
+\end{itemize}
+
+\textbf{FR-OPT-005: Multi-Material Flow Balance}
+
+The system shall maintain energy balance constraints for all material types every hour:
+\begin{itemize}
+\item Electricity: generation + storage discharge + grid import = consumption + storage charge + grid export
+\item Heat: CHP heat output + accumulator discharge + boiler = heat demand + accumulator charge + losses
+\item Gas: grid supply = CHP consumption + boiler consumption
+\end{itemize}
+
+Flow balance must account for conversion efficiencies and losses.
+
+\textbf{FR-OPT-006: Storage State Dynamics}
+
+For all storage devices (battery, heat accumulator), the system shall model state-of-charge dynamics:
+\begin{itemize}
+\item State evolution: $\text{SOC}_{t+1} = \text{SOC}_t + \eta_{\text{charge}} P_{\text{charge},t} \Delta t - P_{\text{discharge},t} / \eta_{\text{discharge}} \Delta t - P_{\text{loss},t} \Delta t$
+\item State bounds: $\text{SOC}_{\text{min}} \leq \text{SOC}_t \leq \text{SOC}_{\text{max}}$
+\item Cyclic constraint: $\text{SOC}_{t=0} = \text{SOC}_{t=8760}$ (storage returns to initial state)
+\item No simultaneous charge/discharge (binary constraints or continuous with losses)
+\end{itemize}
+
+\textbf{FR-OPT-007: Device Operational Constraints}
+
+The system shall enforce technology-specific operational limits:
+
+\textit{Battery constraints:}
+\begin{itemize}
+\item Power limits: $P_{\text{charge/discharge}} \leq P_{\text{rated}}$
+\item C-rate limits: $P / E \leq C_{\text{max}}$ (typically 1-2C)
+\item Depth of discharge: SOC $\geq$ minimum (typically 10-20\%)
+\end{itemize}
+
+\textit{CHP constraints:}
+\begin{itemize}
+\item Minimum stable output: $P_{\text{el}} \geq 0.4 \times P_{\text{rated}}$ when operating
+\item Heat-to-power coupling: $P_{\text{heat}} = \alpha \times P_{\text{el}}$ where $\alpha$ is heat-to-power ratio
+\item Part-load efficiency degradation (optional, for advanced modeling)
+\end{itemize}
+
+\textit{Grid connection constraints:}
+\begin{itemize}
+\item Import limit: $P_{\text{import}} \leq P_{\text{reserved}}$
+\item Export limit: $P_{\text{export}} \leq P_{\text{export,max}}$ (may differ from import)
+\end{itemize}
+
+\subsubsection{Grid Service Integration}
+
+\textbf{FR-OPT-008: aFRR Capacity Reservation}
+
+The system shall model participation in automatic frequency restoration reserve (aFRR) markets:
+\begin{itemize}
+\item Minimum bid size: 1 MW (Czech market requirement)
+\item Hourly capacity reservation decisions (how much battery capacity to offer)
+\item Capacity availability constraint: reserved capacity unavailable for facility energy management
+\item State-of-charge management: maintain SOC near 50\% to provide symmetric response
+\item Revenue calculation: capacity payment (EUR/MW/hour) + estimated energy payment
+\end{itemize}
+
+\textbf{FR-OPT-009: Peak Shaving Optimization}
+
+The system shall optimize peak demand reduction to minimize reserved capacity fees:
+\begin{itemize}
+\item Track maximum monthly peak demand across all hours in each month
+\item Annual reserved capacity is maximum of monthly peaks
+\item Coordinate battery discharge, PV generation, and CHP operation to reduce peaks
+\item Balance peak shaving benefit (capacity fee reduction) against energy cost
+\end{itemize}
+
+\subsubsection{Objective Functions}
+
+\textbf{FR-OPT-010: Economic Objectives}
+
+The system shall support the following objective functions:
+\begin{itemize}
+\item \textbf{Minimize Total Cost}: Minimize CAPEX + NPV(OPEX - Revenue) over project horizon
+\item \textbf{Maximize NPV}: Maximize net present value at specified discount rate
+\item \textbf{Maximize IRR}: Find configuration maximizing internal rate of return (requires iterative optimization)
+\item \textbf{Minimize Payback Period}: Find configuration with shortest payback (requires iterative optimization)
+\end{itemize}
+
+The primary objective is cost minimization / NPV maximization, which can be solved directly. IRR and payback optimization require wrapper algorithms calling the optimizer iteratively.
+
+\textbf{FR-OPT-011: Constraint Handling}
+
+The system shall return meaningful results when constraints conflict:
+\begin{itemize}
+\item Infeasible problems: report which constraints conflict
+\item Unbounded problems: report which variables lack upper bounds
+\item Suboptimal solutions: report optimality gap when time limits are reached
+\end{itemize}
+
+\subsubsection{Solver Architecture}
+
+\textbf{FR-OPT-012: Solver Independence}
+
+The optimization engine shall support multiple solver backends without requiring changes to problem formulation:
+\begin{itemize}
+\item \textbf{CBC}: Open-source MILP solver (default, always available)
+\item \textbf{HiGHS}: High-performance open-source LP/MILP solver
+\item \textbf{Gurobi}: Commercial solver (optional, when license available)
+\item \textbf{CPLEX}: Commercial solver (optional, when license available)
+\end{itemize}
+
+Users select solver at runtime. The system automatically translates domain model to solver-specific format.
+
+\textbf{FR-OPT-013: Performance Requirements}
+
+The system shall solve typical problems within reasonable timeframes:
+\begin{itemize}
+\item Small problems (1-2 devices, no MILP): $< 30$ seconds
+\item Medium problems (3-4 devices, simple MILP): $< 5$ minutes
+\item Large problems (5+ devices, complex MILP): $< 30$ minutes
+\end{itemize}
+
+Times assume open-source solvers (CBC, HiGHS). Commercial solvers may achieve 10-100x speedup.
+
+\subsection{Input Data Management}
+
+The system requires three categories of input data: load profiles, price forecasts, and technology parameters. Input handling must support multiple data formats, validate data quality, and integrate external data sources where appropriate.
+
+\subsubsection{Load Profiles}
+
+\textbf{FR-INPUT-001: Electricity Load Profile}
+
+The system shall accept annual hourly electricity consumption profiles (8,760 values):
+\begin{itemize}
+\item Format: CSV, Excel, JSON, or API submission
+\item Units: kW (instantaneous power) or kWh (hourly energy)
+\item Validation: positive values, no missing hours, reasonable magnitude (compared to stated facility size)
+\item Temporal alignment: must specify timezone and handling of daylight saving time
+\end{itemize}
+
+For facilities with interval metering data, users upload directly. For new facilities, users may provide synthetic profiles based on facility type and size.
+
+\textbf{FR-INPUT-002: Heat Demand Profile}
+
+For facilities with thermal loads (CHP optimization), the system shall accept hourly heat demand:
+\begin{itemize}
+\item Format: CSV, Excel, JSON, or API submission
+\item Units: kW\textsubscript{th} or kWh\textsubscript{th}
+\item Validation: positive values, no missing hours, consistent with facility thermal requirements
+\item Seasonal patterns: system should warn if heat profile lacks expected seasonal variation
+\end{itemize}
+
+\textbf{FR-INPUT-003: Load Profile Scaling}
+
+The system shall support scaling reference load profiles:
+\begin{itemize}
+\item Provide single year of hourly data
+\item System replicates pattern for multi-year optimizations
+\item Optional: specify year-over-year growth rate (e.g., 2\% annual increase)
+\end{itemize}
+
+\subsubsection{Price Forecasts}
+
+\textbf{FR-INPUT-004: Electricity Spot Prices}
+
+The system shall accept hourly electricity price forecasts:
+\begin{itemize}
+\item Format: CSV, Excel, JSON, or API submission
+\item Units: EUR/MWh or CZK/MWh
+\item Duration: single year (replicated) or full project horizon (8,760 to 175,200 hours for 20 years)
+\item Validation: reasonable price ranges (negative allowed for renewable curtailment scenarios)
+\end{itemize}
+
+For multi-year forecasts, users may provide year-specific profiles or single year with escalation rate.
+
+\textbf{FR-INPUT-005: Grid Tariffs}
+
+The system shall accept Czech distribution tariff structure:
+\begin{itemize}
+\item \textbf{Reserved capacity fee}: CZK/kW/month (applied to monthly peak or contracted capacity)
+\item \textbf{Distribution charge}: CZK/kWh (may be time-of-use with high/low rates)
+\item \textbf{Electricity tax}: CZK/MWh (currently 28.30 CZK/MWh)
+\item \textbf{System services charge}: CZK/MWh
+\end{itemize}
+
+Tariffs may be specified as constants or time series (for modeling tariff evolution).
+
+\textbf{FR-INPUT-006: Fuel Prices}
+
+For CHP optimization, the system shall accept natural gas prices:
+\begin{itemize}
+\item Units: EUR/MWh\textsubscript{th} (thermal)
+\item Duration: single value or time series (monthly/annual variation)
+\item Validation: realistic ranges (20-80 EUR/MWh\textsubscript{th} typical)
+\end{itemize}
+
+\textbf{FR-INPUT-007: Grid Service Prices}
+
+For aFRR optimization, the system shall accept market price forecasts:
+\begin{itemize}
+\item \textbf{Capacity payment}: EUR/MW/hour (payment for making capacity available)
+\item \textbf{Energy payment}: EUR/MWh (payment when activated) or percentage premium over spot price
+\item Duration: hourly time series or statistical distribution
+\end{itemize}
+
+\subsubsection{Technology Parameters}
+
+\textbf{FR-INPUT-008: Photovoltaic Parameters}
+
+Users shall specify PV system characteristics:
+\begin{itemize}
+\item \textbf{Maximum capacity}: kWp (upper bound for optimization)
+\item \textbf{Capital cost}: EUR/kWp (linear) or power-law coefficients $(a, b)$
+\item \textbf{Fixed O\&M}: EUR/kWp/year
+\item \textbf{Degradation}: \%/year (typically 0.5\%)
+\item \textbf{Lifetime}: years (typically 25-30)
+\item \textbf{Location}: latitude, longitude for PVGIS integration
+\item \textbf{Mounting}: fixed tilt/azimuth or tracking system
+\end{itemize}
+
+\textbf{FR-INPUT-009: Battery Parameters}
+
+Users shall specify battery storage characteristics:
+\begin{itemize}
+\item \textbf{Maximum energy capacity}: kWh
+\item \textbf{Maximum power rating}: kW
+\item \textbf{Capital cost}: EUR/kWh (energy) + EUR/kW (power), or combined power-law
+\item \textbf{Round-trip efficiency}: \% (typically 85-95\%)
+\item \textbf{Self-discharge}: \%/day (typically 0.1-0.5\%)
+\item \textbf{Depth-of-discharge limits}: \% (typically 10-90\%)
+\item \textbf{Degradation model}: cycle-based or throughput-based
+\item \textbf{Replacement schedule}: years until replacement (typically 10-15)
+\item \textbf{Fixed O\&M}: EUR/kWh/year
+\end{itemize}
+
+\textbf{FR-INPUT-010: CHP Parameters}
+
+Users shall specify CHP unit characteristics:
+\begin{itemize}
+\item \textbf{Maximum electrical capacity}: MW\textsubscript{el}
+\item \textbf{Electrical efficiency}: \% (typically 35-45\%)
+\item \textbf{Thermal efficiency}: \% (typically 40-50\%)
+\item \textbf{Heat-to-power ratio}: dimensionless (typically 0.9-1.3)
+\item \textbf{Capital cost}: EUR/kW\textsubscript{el} with economies of scale
+\item \textbf{Variable O\&M}: EUR/MWh\textsubscript{el}
+\item \textbf{Fixed O\&M}: EUR/kW\textsubscript{el}/year
+\item \textbf{Minimum part-load}: \% (typically 40-50\%)
+\item \textbf{Lifetime}: hours (typically 60,000-80,000 hours)
+\end{itemize}
+
+\textbf{FR-INPUT-011: Heat Accumulator Parameters}
+
+Users shall specify thermal storage characteristics:
+\begin{itemize}
+\item \textbf{Maximum capacity}: kWh\textsubscript{th}
+\item \textbf{Capital cost}: EUR/kWh\textsubscript{th} with economies of scale
+\item \textbf{Heat loss rate}: \%/day (typically 1-3\%)
+\item \textbf{Charge/discharge efficiency}: \% (typically 95-98\%)
+\item \textbf{Maximum charge/discharge power}: kW\textsubscript{th}
+\item \textbf{Fixed O\&M}: EUR/kWh\textsubscript{th}/year
+\end{itemize}
+
+\subsubsection{External Data Integration}
+
+\textbf{FR-INPUT-012: PVGIS Integration}
+
+The system shall automatically retrieve PV generation profiles from PVGIS:
+\begin{itemize}
+\item Input: latitude, longitude, panel specifications (tilt, azimuth, technology)
+\item Output: hourly generation profile (kWh per kWp installed)
+\item Validation: check PVGIS service availability, handle API errors gracefully
+\item Caching: cache PVGIS results to avoid repeated API calls for same location
+\end{itemize}
+
+This eliminates manual preparation of weather-dependent generation data.
+
+\textbf{FR-INPUT-013: Data Validation and Quality Checks}
+
+The system shall validate all input data:
+\begin{itemize}
+\item \textbf{Completeness}: no missing hours in time series
+\item \textbf{Ranges}: values within physically realistic bounds
+\item \textbf{Consistency}: e.g., heat demand compatible with CHP sizing
+\item \textbf{Units}: clear specification and automatic conversion
+\item \textbf{Timezone}: explicit timezone handling for hourly data
+\end{itemize}
+
+Validation failures shall produce clear error messages identifying the problem.
+
+\subsection{Economic Analysis}
+
+Economic analysis converts optimization results into financial metrics suitable for investment decisions. The system must model all cost and revenue streams over multi-decade project horizons with appropriate discounting.
+
+\subsubsection{Investment Costs (CAPEX)}
+
+\textbf{FR-ECON-001: Equipment Costs with Economies of Scale}
+
+The system shall calculate equipment costs using power-law relationships:
+\[
+C_{\text{equipment}} = a \times P^b
+\]
+where $P$ is capacity (kW, kWh, kWp), $a$ is the cost coefficient, and $b < 1$ represents economies of scale. Typical values: $b = 0.7$-$0.9$ depending on technology.
+
+\textbf{FR-ECON-002: Installation and Commissioning}
+
+Users may specify installation costs as:
+\begin{itemize}
+\item Percentage of equipment cost (e.g., 15-25\%)
+\item Fixed amount (EUR)
+\item Detailed breakdown by labor, materials, permits
+\end{itemize}
+
+\textbf{FR-ECON-003: Grid Connection Costs}
+
+If optimized reserved capacity exceeds existing contract, system calculates grid connection upgrade costs:
+\begin{itemize}
+\item Fixed cost per kW of capacity increase
+\item May include transformer upgrades, substation work
+\item Users specify cost structure for their distribution zone
+\end{itemize}
+
+\textbf{FR-ECON-004: Total CAPEX Calculation}
+
+Total initial investment:
+\[
+\text{CAPEX} = \sum_{\text{devices}} C_{\text{equipment}} + C_{\text{installation}} + C_{\text{grid}} + C_{\text{development}}
+\]
+
+\subsubsection{Operating Costs (OPEX)}
+
+\textbf{FR-ECON-005: Fixed O\&M Costs}
+
+Annual fixed operating costs proportional to installed capacity:
+\[
+C_{\text{fixed,annual}} = \sum_{\text{devices}} c_{\text{fixed}} \times P_{\text{installed}}
+\]
+Units: EUR/kW/year or EUR/kWh/year depending on device type.
+
+\textbf{FR-ECON-006: Variable O\&M Costs}
+
+Operating costs proportional to energy throughput:
+\[
+C_{\text{variable,annual}} = \sum_{\text{devices}} c_{\text{variable}} \times E_{\text{annual}}
+\]
+Units: EUR/MWh. Important for CHP (maintenance per hour of operation).
+
+\textbf{FR-ECON-007: Fuel Costs}
+
+For CHP systems, annual fuel costs:
+\[
+C_{\text{fuel,annual}} = \sum_{t=1}^{8760} P_{\text{CHP},t} \times \Delta t / \eta_{\text{el}} \times p_{\text{gas},t}
+\]
+where $\eta_{\text{el}}$ is electrical efficiency and $p_{\text{gas}}$ is gas price.
+
+\textbf{FR-ECON-008: Grid Charges}
+
+\textit{Reserved capacity fee (Czech specific):}
+\[
+C_{\text{capacity}} = P_{\text{reserved}} \times p_{\text{capacity}} \times 12
+\]
+Units: CZK/kW/month converted to annual cost. Typical range: 200-400 CZK/kW/month.
+
+\textit{Distribution tariff:}
+\[
+C_{\text{distribution}} = \sum_{t=1}^{8760} E_{\text{import},t} \times p_{\text{distribution},t}
+\]
+
+\textit{Electricity tax and system services:}
+Fixed CZK/MWh charges applied to all consumption.
+
+\textbf{FR-ECON-009: Degradation and Replacement Reserves}
+
+The system shall model equipment replacement:
+\begin{itemize}
+\item \textbf{Battery replacement}: typically year 10-15, cost 70\% of initial (excluding power electronics)
+\item \textbf{PV inverter replacement}: typically year 12-15, cost 10-15\% of initial system cost
+\item \textbf{CHP major overhaul}: based on operating hours, cost 20-30\% of initial
+\end{itemize}
+
+Replacement costs are discounted to present value.
+
+\subsubsection{Revenue Streams}
+
+\textbf{FR-ECON-010: Energy Cost Savings}
+
+Primary revenue is avoided grid purchase cost:
+\[
+R_{\text{savings}} = \sum_{t=1}^{8760} E_{\text{generation},t} \times (p_{\text{electricity},t} + p_{\text{distribution},t} + p_{\text{tax}})
+\]
+
+This represents energy generated on-site that displaces grid purchase.
+
+\textbf{FR-ECON-011: Electricity Sales}
+
+If facility exports to grid (PV oversizing):
+\[
+R_{\text{export}} = \sum_{t=1}^{8760} E_{\text{export},t} \times p_{\text{export},t}
+\]
+
+Note: export prices typically lower than import prices (no distribution charge refund).
+
+\textbf{FR-ECON-012: aFRR Revenues}
+
+\textit{Capacity payment:}
+\[
+R_{\text{aFRR,capacity}} = \sum_{t=1}^{8760} P_{\text{aFRR},t} \times p_{\text{aFRR,capacity},t}
+\]
+Units: EUR/MW/hour.
+
+\textit{Energy payment (estimated):}
+\[
+R_{\text{aFRR,energy}} = \sum_{t=1}^{8760} P_{\text{aFRR},t} \times f_{\text{activation}} \times p_{\text{aFRR,energy},t}
+\]
+where $f_{\text{activation}}$ is expected activation rate (e.g., 10-20\%).
+
+\textbf{FR-ECON-013: Peak Demand Charge Reduction}
+
+Savings from reduced reserved capacity:
+\[
+R_{\text{peak}} = (P_{\text{baseline}} - P_{\text{optimized}}) \times p_{\text{capacity}} \times 12
+\]
+
+This is a major value stream for industrial facilities with high capacity charges.
+
+\subsubsection{Financial Metrics}
+
+\textbf{FR-ECON-014: Net Present Value (NPV)}
+
+Calculate NPV over project horizon:
+\[
+\text{NPV} = -\text{CAPEX} + \sum_{y=1}^{N} \frac{CF_y}{(1+r)^y}
+\]
+where $CF_y$ is annual cash flow (revenues minus OPEX) in year $y$, $r$ is discount rate, and $N$ is project lifetime (typically 20 years).
+
+\textbf{FR-ECON-015: Internal Rate of Return (IRR)}
+
+Calculate IRR as the discount rate where NPV = 0:
+\[
+0 = -\text{CAPEX} + \sum_{y=1}^{N} \frac{CF_y}{(1+\text{IRR})^y}
+\]
+
+Solved numerically. Report if no solution exists (project never profitable).
+
+\textbf{FR-ECON-016: Return on Investment (ROI)}
+
+Simple ROI calculation:
+\[
+\text{ROI} = \frac{\sum_{y=1}^{N} CF_y - \text{CAPEX}}{\text{CAPEX}} \times 100\%
+\]
+
+Also calculate annualized ROI: $\text{ROI}_{\text{annual}} = \text{ROI} / N$.
+
+\textbf{FR-ECON-017: Payback Period}
+
+\textit{Simple payback:}
+Minimum $y$ where $\sum_{i=1}^{y} CF_i \geq \text{CAPEX}$.
+
+\textit{Discounted payback:}
+Minimum $y$ where $\sum_{i=1}^{y} \frac{CF_i}{(1+r)^i} \geq \text{CAPEX}$.
+
+\textbf{FR-ECON-018: Levelized Cost of Energy (LCOE)}
+
+For generation technologies (PV, CHP):
+\[
+\text{LCOE} = \frac{\text{CAPEX} + \sum_{y=1}^{N} \frac{\text{OPEX}_y}{(1+r)^y}}{\sum_{y=1}^{N} \frac{E_y}{(1+r)^y}}
+\]
+Units: EUR/MWh. Useful for comparing generation technologies.
+
+\subsubsection{Sensitivity Analysis}
+
+\textbf{FR-ECON-019: Single-Parameter Sensitivity}
+
+The system shall automatically generate sensitivity analysis varying key parameters:
+\begin{itemize}
+\item Electricity price: $\pm 20\%$, $\pm 50\%$
+\item Technology costs: $\pm 20\%$, $\pm 50\%$
+\item Discount rate: $\pm 2$ percentage points
+\item Degradation rate: $\pm 50\%$
+\end{itemize}
+
+Report impact on NPV, IRR, optimal sizing.
+
+\textbf{FR-ECON-020: Scenario Comparison}
+
+Users shall compare multiple technology configurations with identical economic assumptions:
+\begin{itemize}
+\item Scenario 1: PV only
+\item Scenario 2: PV + Battery
+\item Scenario 3: PV + Battery + aFRR
+\item Scenario 4: CHP + Heat Accumulator
+\end{itemize}
+
+Present side-by-side comparison table with NPV, IRR, ROI, sizing, CAPEX.
+
+\subsection{Results and Reporting}
+
+The system must present results clearly for both technical analysis and business decision-making. Primary outputs focus on optimal sizing and economic metrics; operational details are secondary.
+
+\subsubsection{Optimal Sizing Results}
+
+\textbf{FR-RESULT-001: Technology Sizing Summary}
+
+For each optimized technology, report:
+\begin{itemize}
+\item Optimal capacity (kW, kWh, kWp)
+\item Boundary status (at lower bound, interior solution, at upper bound)
+\item Shadow price (marginal value of relaxing capacity constraint)
+\end{itemize}
+
+Example output:
+\begin{itemize}
+\item PV: 220 kWp (interior solution, shadow price: 50 EUR/kWp)
+\item Battery Power: 120 kW (at upper bound, shadow price: 120 EUR/kW)
+\item Battery Energy: 480 kWh (interior solution, shadow price: 35 EUR/kWh)
+\end{itemize}
+
+\textbf{FR-RESULT-002: Grid Connection Sizing}
+
+Report optimized reserved capacity:
+\begin{itemize}
+\item Optimized reserved capacity (kW)
+\item Baseline reserved capacity without optimization (kW)
+\item Reduction achieved (kW and \%)
+\item Annual capacity fee savings (EUR/year)
+\end{itemize}
+
+\subsubsection{Economic Results}
+
+\textbf{FR-RESULT-003: Economic Summary Table}
+
+Present financial metrics in structured format:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Total CAPEX & 330,000 EUR \\
+Annual OPEX & 8,500 EUR/year \\
+Annual Revenue & 68,500 EUR/year \\
+Annual Net Cash Flow & 60,000 EUR/year \\
+\midrule
+NPV (6\% discount) & 250,000 EUR \\
+IRR & 11.2\% \\
+ROI & 263\% \\
+Simple Payback & 5.5 years \\
+Discounted Payback & 8.1 years \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{FR-RESULT-004: Cash Flow Projection}
+
+Provide annual cash flow table for project lifetime:
+\begin{itemize}
+\item Year 0: CAPEX (negative)
+\item Years 1-20: annual revenues, OPEX, net cash flow
+\item Years with major replacements (e.g., battery replacement year 10)
+\item Cumulative cash flow (for payback visualization)
+\end{itemize}
+
+\textbf{FR-RESULT-005: Cost and Revenue Breakdown}
+
+Detailed breakdown of annual economics:
+
+\textit{OPEX Components:}
+\begin{itemize}
+\item Fixed O\&M by device
+\item Variable O\&M by device
+\item Fuel costs (CHP)
+\item Grid charges (capacity fee, distribution, taxes)
+\end{itemize}
+
+\textit{Revenue Components:}
+\begin{itemize}
+\item Energy cost savings
+\item Electricity export revenue
+\item aFRR capacity revenue
+\item aFRR energy revenue (estimated)
+\item Peak demand charge reduction
+\end{itemize}
+
+\subsubsection{Operational Profiles (Secondary)}
+
+\textbf{FR-RESULT-006: Typical Day Visualizations}
+
+Generate operational profile visualizations for representative days:
+\begin{itemize}
+\item Winter day (high load, low PV)
+\item Summer day (moderate load, high PV)
+\item Shoulder season day
+\end{itemize}
+
+Each visualization shows hourly time series:
+\begin{itemize}
+\item Electricity load (kW)
+\item PV generation (kW)
+\item Battery charge/discharge (kW)
+\item Grid import/export (kW)
+\item Battery state-of-charge (\%)
+\item Electricity price (EUR/MWh) as background color
+\end{itemize}
+
+\textbf{FR-RESULT-007: Annual Energy Balance}
+
+Summary statistics over full year:
+\begin{itemize}
+\item Total load (MWh)
+\item Total PV generation (MWh)
+\item Total battery throughput (MWh)
+\item Total grid import (MWh)
+\item Total grid export (MWh)
+\item Self-consumption rate (\%)
+\item Battery utilization (cycles per year)
+\end{itemize}
+
+\textbf{FR-RESULT-008: Peak Demand Analysis}
+
+Monthly peak demand table:
+\begin{itemize}
+\item Month-by-month maximum demand (kW)
+\item Baseline maximum demand (kW)
+\item Peak reduction achieved (kW)
+\item Date and hour of peak occurrence
+\end{itemize}
+
+\subsubsection{Comparison and Sensitivity Results}
+
+\textbf{FR-RESULT-009: Scenario Comparison Matrix}
+
+Side-by-side comparison table for multiple scenarios:
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Metric} & \textbf{PV Only} & \textbf{PV + Battery} & \textbf{PV + Bat + aFRR} \\
+\midrule
+PV Capacity (kWp) & 250 & 220 & 220 \\
+Battery (kW / kWh) & --- & 120 / 480 & 150 / 600 \\
+CAPEX (EUR) & 200,000 & 330,000 & 380,000 \\
+Annual Cash Flow (EUR) & 35,000 & 60,000 & 75,000 \\
+NPV (EUR) & 180,000 & 250,000 & 310,000 \\
+IRR (\%) & 10.5 & 11.2 & 12.8 \\
+Payback (years) & 5.7 & 8.1 & 7.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{FR-RESULT-010: Sensitivity Charts}
+
+Graphical sensitivity analysis:
+\begin{itemize}
+\item Tornado diagram: ranking parameters by NPV impact
+\item NPV vs. electricity price curve
+\item NPV vs. discount rate curve
+\item IRR vs. technology cost curve
+\end{itemize}
+
+\subsubsection{Export Formats}
+
+\textbf{FR-RESULT-011: PDF Report Generation}
+
+Automated PDF report including:
+\begin{itemize}
+\item Executive summary (1 page)
+\item Economic results (tables and charts)
+\item Optimal sizing recommendations
+\item Sensitivity analysis
+\item Sample operational profiles (selected days)
+\item Assumptions and input data summary
+\end{itemize}
+
+Professional formatting suitable for client presentations and loan applications.
+
+\textbf{FR-RESULT-012: Excel Export}
+
+Detailed Excel workbook with multiple sheets:
+\begin{itemize}
+\item Summary: economic metrics and sizing
+\item Hourly Results: complete 8,760-hour operational schedule
+\item Cash Flow: annual cash flow projection
+\item Sensitivity: parameter variation results
+\item Input Data: echo of all input parameters for reproducibility
+\end{itemize}
+
+\textbf{FR-RESULT-013: API JSON Response}
+
+For programmatic access, structured JSON containing all results:
+\begin{itemize}
+\item Optimal sizing (machine-readable)
+\item Economic metrics (with units)
+\item Hourly operational data (optional, can be large)
+\item Metadata: optimization runtime, solver used, solution status
+\end{itemize}
+
+\subsection{REST API}
+
+The REST API provides programmatic access to the optimization platform, enabling integration with external workflows, Monte Carlo frameworks, and custom applications.
+
+\subsubsection{API Architecture}
+
+\textbf{FR-API-001: RESTful Design}
+
+API shall follow REST principles:
+\begin{itemize}
+\item Resource-based URLs: \texttt{/projects}, \texttt{/optimizations}, \texttt{/results}
+\item HTTP methods: GET (retrieve), POST (create), PUT (update), DELETE (remove)
+\item Stateless: each request contains all necessary information
+\item JSON request/response bodies
+\end{itemize}
+
+\textbf{FR-API-002: OpenAPI Documentation}
+
+Complete API documentation using OpenAPI 3.0 specification:
+\begin{itemize}
+\item Interactive Swagger UI for testing endpoints
+\item Auto-generated client libraries in multiple languages
+\item Schema definitions for all request/response objects
+\item Example requests and responses
+\end{itemize}
+
+\textbf{FR-API-003: Authentication}
+
+API key-based authentication:
+\begin{itemize}
+\item Each user/organization receives API key
+\item Key included in HTTP header: \texttt{Authorization: Bearer <token>}
+\item Rate limiting per API key
+\item Key rotation support
+\end{itemize}
+
+\subsubsection{Core Endpoints}
+
+\textbf{FR-API-004: Project Management}
+
+\texttt{POST /projects} - Create new project
+\begin{itemize}
+\item Request: project name, description, site location
+\item Response: project ID, creation timestamp
+\end{itemize}
+
+\texttt{GET /projects} - List user's projects
+
+\texttt{GET /projects/\{id\}} - Get project details
+
+\texttt{DELETE /projects/\{id\}} - Delete project
+
+\textbf{FR-API-005: Optimization Job Submission}
+
+\texttt{POST /projects/\{id\}/optimizations} - Submit optimization job
+\begin{itemize}
+\item Request body includes:
+  \begin{itemize}
+  \item Load profiles (electricity, heat)
+  \item Price forecasts (electricity, gas, grid services)
+  \item Technology specifications (devices to optimize)
+  \item Economic parameters (discount rate, project lifetime)
+  \item Optimization settings (objective, solver preference)
+  \end{itemize}
+\item Response: optimization job ID, status (queued)
+\end{itemize}
+
+\texttt{GET /optimizations/\{id\}} - Get optimization status
+\begin{itemize}
+\item Response: status (queued | running | completed | failed), progress percentage
+\end{itemize}
+
+\textbf{FR-API-006: Results Retrieval}
+
+\texttt{GET /optimizations/\{id\}/results} - Get optimization results
+\begin{itemize}
+\item Response includes:
+  \begin{itemize}
+  \item Optimal sizing
+  \item Economic metrics
+  \item Solution status (optimal | suboptimal | infeasible)
+  \end{itemize}
+\end{itemize}
+
+\texttt{GET /optimizations/\{id\}/results/hourly} - Get detailed hourly data
+
+\texttt{GET /optimizations/\{id\}/results/export?format=excel} - Export results
+
+\textbf{FR-API-007: Scenario Comparison}
+
+\texttt{POST /projects/\{id\}/comparisons} - Create scenario comparison
+\begin{itemize}
+\item Request: list of optimization IDs to compare
+\item Response: comparison matrix with side-by-side results
+\end{itemize}
+
+\subsubsection{Data Upload Endpoints}
+
+\textbf{FR-API-008: Time Series Upload}
+
+\texttt{POST /projects/\{id\}/data/load-profile} - Upload load profile CSV
+
+\texttt{POST /projects/\{id\}/data/prices} - Upload price forecast CSV
+
+\textbf{FR-API-009: PVGIS Integration Endpoint}
+
+\texttt{POST /projects/\{id\}/data/pvgis} - Request PV generation profile
+\begin{itemize}
+\item Request: latitude, longitude, panel specifications
+\item Response: hourly generation profile (kWh per kWp)
+\item Caches result for this location/configuration
+\end{itemize}
+
+\subsubsection{Asynchronous Operation}
+
+\textbf{FR-API-010: Long-Running Jobs}
+
+Optimizations are asynchronous:
+\begin{enumerate}
+\item Client POSTs optimization job → receives job ID
+\item Client polls \texttt{GET /optimizations/\{id\}} for status
+\item When status = completed, client GETs results
+\end{enumerate}
+
+\textbf{FR-API-011: Webhook Notifications}
+
+Optional webhook support:
+\begin{itemize}
+\item User specifies webhook URL when submitting optimization
+\item System POSTs to webhook when optimization completes
+\item Webhook payload includes job ID and status
+\end{itemize}
+
+\subsubsection{Error Handling}
+
+\textbf{FR-API-012: HTTP Status Codes}
+
+Standard HTTP status codes:
+\begin{itemize}
+\item 200 OK: successful GET
+\item 201 Created: successful POST
+\item 400 Bad Request: invalid input data
+\item 401 Unauthorized: missing/invalid API key
+\item 404 Not Found: resource doesn't exist
+\item 429 Too Many Requests: rate limit exceeded
+\item 500 Internal Server Error: server-side failure
+\end{itemize}
+
+\textbf{FR-API-013: Error Response Format}
+
+Structured error responses:
+\begin{verbatim}
+{
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "Load profile contains negative values",
+    "details": {
+      "field": "load_profile",
+      "invalid_hours": [523, 524, 525]
+    }
+  }
+}
+\end{verbatim}
+
+\subsection{Python Client Library}
+
+The Python client library provides a high-level, Pythonic interface to the REST API, abstracting device models and making integration seamless for data science workflows.
+
+\subsubsection{Package Structure}
+
+\textbf{FR-PY-001: Package Distribution}
+
+\begin{itemize}
+\item Package name: \texttt{site-calc-client}
+\item Distribution: PyPI (\texttt{pip install site-calc-client})
+\item Python version: 3.9+
+\item Dependencies: \texttt{requests}, \texttt{pandas}, \texttt{pydantic}
+\end{itemize}
+
+\textbf{FR-PY-002: Auto-Generation from OpenAPI}
+
+Client library auto-generated from OpenAPI specification ensures:
+\begin{itemize}
+\item API compatibility guaranteed
+\item Automatic updates when API changes
+\item Consistent error handling
+\end{itemize}
+
+High-level device abstractions hand-coded for better user experience.
+
+\subsubsection{Core API}
+
+\textbf{FR-PY-003: Client Initialization}
+
+\begin{verbatim}
+from site_calc_client import Client
+
+client = Client(api_key="your-api-key")
+# Or use environment variable: SITE_CALC_API_KEY
+client = Client()
+\end{verbatim}
+
+\textbf{FR-PY-004: Site and Device Configuration}
+
+\begin{verbatim}
+from site_calc_client import Site, Battery, PV
+
+site = Site(name="Industrial Facility")
+
+# Add devices with high-level parameters
+site.add_device(PV(
+    name="Rooftop PV",
+    max_capacity_kwp=500,
+    location=(50.0755, 14.4378),  # Prague
+    capex_per_kwp=800,
+    opex_per_kwp_year=12
+))
+
+site.add_device(Battery(
+    name="Main Battery",
+    max_power_kw=250,
+    max_capacity_kwh=1000,
+    capex_per_kwh=200,
+    capex_per_kw=150,
+    efficiency=0.90,
+    degradation_model="throughput"
+))
+\end{verbatim}
+
+\textbf{FR-PY-005: Load and Price Data}
+
+\begin{verbatim}
+import pandas as pd
+
+# Load profile from file
+load_profile = pd.read_csv("load.csv", index_col=0)
+site.set_load_profile(load_profile["electricity_kw"])
+
+# Prices from DataFrame
+prices = pd.read_csv("prices.csv", index_col=0)
+site.set_electricity_prices(prices["spot_price_eur_mwh"])
+site.set_grid_tariff(
+    capacity_fee_czk_per_kw_month=300,
+    distribution_czk_per_kwh=500
+)
+\end{verbatim}
+
+\textbf{FR-PY-006: Optimization Execution}
+
+\begin{verbatim}
+# Configure optimization
+optimization = client.create_optimization(
+    site=site,
+    objective="maximize_npv",
+    time_horizon_years=20,
+    discount_rate=0.06,
+    solver="highs"  # optional, default: "cbc"
+)
+
+# Submit and wait for results
+result = optimization.run()  # Blocking call
+# Or async:
+job = optimization.submit()  # Returns immediately
+result = job.wait()  # Wait for completion
+\end{verbatim}
+
+\textbf{FR-PY-007: Results Access}
+
+\begin{verbatim}
+# Optimal sizing
+print(f"PV: {result.get_device_capacity('Rooftop PV')} kWp")
+print(f"Battery: {result.get_device_capacity('Main Battery')} kWh")
+print(f"Battery Power: {result.get_device_power('Main Battery')} kW")
+
+# Economic metrics
+print(f"NPV: {result.npv:.0f} EUR")
+print(f"IRR: {result.irr * 100:.1f}%")
+print(f"Payback: {result.payback_years:.1f} years")
+
+# Cash flow DataFrame
+cash_flow = result.get_cash_flow_table()
+# Returns: pandas DataFrame with columns [Year, OPEX, Revenue, Net, Cumulative]
+
+# Hourly operational data
+hourly = result.get_hourly_data()
+# Returns: pandas DataFrame with hourly time series
+\end{verbatim}
+
+\subsubsection{Device Abstractions}
+
+\textbf{FR-PY-008: Device Class Hierarchy}
+
+Users work with concrete device types, not generic "Device":
+\begin{itemize}
+\item \texttt{PV(name, max\_capacity\_kwp, location, ...)}
+\item \texttt{Battery(name, max\_power\_kw, max\_capacity\_kwh, ...)}
+\item \texttt{CHP(name, max\_capacity\_mw, efficiency\_el, efficiency\_heat, ...)}
+\item \texttt{HeatAccumulator(name, max\_capacity\_kwh\_th, ...)}
+\end{itemize}
+
+Each class has type-safe parameters with validation.
+
+\textbf{FR-PY-009: No Internal Implementation Exposure}
+
+Users do NOT see:
+\begin{itemize}
+\item Flow systems
+\item Material balance equations
+\item Port connections
+\item Physics rules
+\end{itemize}
+
+Library presents intuitive energy engineering concepts only.
+
+\subsubsection{Advanced Features}
+
+\textbf{FR-PY-010: Scenario Comparison}
+
+\begin{verbatim}
+# Define multiple scenarios
+scenario1 = client.create_optimization(
+    site=site_pv_only,
+    objective="maximize_npv",
+    ...
+)
+
+scenario2 = client.create_optimization(
+    site=site_pv_battery,
+    objective="maximize_npv",
+    ...
+)
+
+# Compare
+comparison = client.compare_scenarios([scenario1, scenario2])
+comparison.plot()  # Generate comparison charts
+comparison.to_dataframe()  # Comparison matrix
+\end{verbatim}
+
+\textbf{FR-PY-011: Sensitivity Analysis}
+
+\begin{verbatim}
+sensitivity = optimization.sensitivity_analysis(
+    parameter="electricity_price",
+    range=(-0.5, 0.5),  # ±50%
+    steps=10
+)
+
+sensitivity.plot()  # NPV vs. price chart
+sensitivity.results  # DataFrame of results
+\end{verbatim}
+
+\textbf{FR-PY-012: Batch Processing}
+
+For Monte Carlo integration:
+\begin{verbatim}
+results = []
+for scenario in price_scenarios:  # 1000+ scenarios
+    site.set_electricity_prices(scenario)
+    opt = client.create_optimization(site=site, ...)
+    result = opt.run()
+    results.append({
+        "npv": result.npv,
+        "irr": result.irr,
+        "pv_size": result.get_device_capacity("PV")
+    })
+
+results_df = pd.DataFrame(results)
+results_df["npv"].describe()  # Statistical summary
+\end{verbatim}
+
+\subsubsection{Type Safety and Documentation}
+
+\textbf{FR-PY-013: Type Hints}
+
+All public methods fully typed:
+\begin{verbatim}
+def get_device_capacity(
+    self,
+    device_name: str
+) -> float:
+    """Get optimal capacity for named device.
+
+    Args:
+        device_name: Name of device (as specified in Site)
+
+    Returns:
+        Optimal capacity in device-specific units (kW, kWh, kWp)
+
+    Raises:
+        KeyError: If device_name not found in site
+    """
+\end{verbatim}
+
+\textbf{FR-PY-014: Comprehensive Documentation}
+
+\begin{itemize}
+\item Docstrings for all classes and methods
+\item Sphinx-generated HTML documentation
+\item Jupyter notebook examples for common workflows
+\item README with quickstart guide
+\end{itemize}
+
+\subsection{Web Interface}
+
+The web interface provides interactive access for users who prefer graphical configuration over programmatic APIs. The interface must be intuitive for energy consultants without software engineering backgrounds.
+
+\subsubsection{User Interface Structure}
+
+\textbf{FR-WEB-001: Project Dashboard}
+
+Landing page showing:
+\begin{itemize}
+\item List of user's projects with status
+\item Recent optimizations (running, completed, failed)
+\item Quick actions: create project, view results
+\item Usage statistics (API calls, compute time)
+\end{itemize}
+
+\textbf{FR-WEB-002: Project Creation Wizard}
+
+Step-by-step wizard for new projects:
+\begin{enumerate}
+\item \textbf{Basic Info}: project name, site location, facility type
+\item \textbf{Load Data}: upload CSV or enter manually, validate time series
+\item \textbf{Technology Selection}: checkboxes for PV, Battery, CHP, Heat Accumulator
+\item \textbf{Technology Parameters}: forms for each selected technology
+\item \textbf{Economic Assumptions}: discount rate, project lifetime, price forecasts
+\item \textbf{Optimization Settings}: objective function, solver preference
+\item \textbf{Review and Submit}: summary of configuration, submit button
+\end{enumerate}
+
+\textbf{FR-WEB-003: Data Upload Interface}
+
+CSV/Excel file upload with preview:
+\begin{itemize}
+\item Drag-and-drop file upload
+\item Column mapping interface (map CSV columns to expected fields)
+\item Data validation with error highlighting
+\item Chart preview of uploaded time series
+\end{itemize}
+
+\subsubsection{Technology Configuration}
+
+\textbf{FR-WEB-004: Technology Selection}
+
+Visual card-based technology selector:
+\begin{itemize}
+\item Card for each technology (PV, Battery, CHP, etc.) with icon and description
+\item Toggle switch to enable/disable technology
+\item When enabled, expand to show parameter form
+\end{itemize}
+
+\textbf{FR-WEB-005: Parameter Input Forms}
+
+For each technology, structured form with:
+\begin{itemize}
+\item Required parameters highlighted
+\item Optional parameters collapsed by default
+\item Units clearly labeled
+\item Validation (min/max ranges, required fields)
+\item Tooltips explaining each parameter
+\item Default values pre-filled (typical values)
+\end{itemize}
+
+\textbf{FR-WEB-006: PVGIS Integration UI}
+
+For PV configuration:
+\begin{itemize}
+\item Interactive map for location selection (click to set lat/lon)
+\item Or manual lat/lon entry
+\item Button: "Fetch generation profile from PVGIS"
+\item Progress indicator during API call
+\item Preview chart of generation profile when loaded
+\end{itemize}
+
+\subsubsection{Optimization Execution}
+
+\textbf{FR-WEB-007: Optimization Launch}
+
+Submit page showing:
+\begin{itemize}
+\item Summary of configuration (all inputs)
+\item Estimated solve time based on problem size
+\item Solver selection dropdown (CBC, HiGHS, Gurobi if available)
+\item "Start Optimization" button
+\end{itemize}
+
+\textbf{FR-WEB-008: Progress Monitoring}
+
+Live status page during optimization:
+\begin{itemize}
+\item Progress bar (if solver reports progress)
+\item Status messages: "Formulating problem", "Solving", "Extracting results"
+\item Elapsed time
+\item Option to cancel running optimization
+\item Real-time log output (optional, for debugging)
+\end{itemize}
+
+\subsubsection{Results Visualization}
+
+\textbf{FR-WEB-009: Results Summary Page}
+
+High-level results overview:
+\begin{itemize}
+\item Hero metrics: NPV, IRR, ROI (large, prominent display)
+\item Optimal sizing table (technology × capacity)
+\item CAPEX breakdown pie chart
+\item Annual revenue breakdown pie chart
+\item Quick actions: download report, export Excel, compare scenarios
+\end{itemize}
+
+\textbf{FR-WEB-010: Economic Analysis Tab}
+
+Detailed economic results:
+\begin{itemize}
+\item Cash flow table (annual breakdown)
+\item NPV calculation details
+\item Payback period chart (cumulative cash flow over time)
+\item Cost and revenue breakdowns (stacked bar charts)
+\end{itemize}
+
+\textbf{FR-WEB-011: Operational Profiles Tab}
+
+Visualization of typical operation:
+\begin{itemize}
+\item Dropdown: select representative day (winter/summer/shoulder)
+\item Hourly stacked area chart: generation, storage, grid, load
+\item Battery SOC line chart (separate axis)
+\item Price background color (visual indication of high/low prices)
+\item Zoom and pan controls
+\end{itemize}
+
+\textbf{FR-WEB-012: Sensitivity Analysis Tab}
+
+Interactive sensitivity exploration:
+\begin{itemize}
+\item Dropdown: select parameter to vary
+\item Slider: adjust parameter value
+\item Live update of NPV, IRR, optimal sizing
+\item Comparison to baseline case
+\end{itemize}
+
+\subsubsection{Scenario Comparison}
+
+\textbf{FR-WEB-013: Comparison Mode (Critical Requirement)}
+
+Side-by-side scenario comparison:
+\begin{itemize}
+\item Select multiple completed optimizations (checkboxes)
+\item Click "Compare" button
+\item Comparison view shows:
+  \begin{itemize}
+  \item Side-by-side metrics table
+  \item Comparative bar charts (NPV, IRR, CAPEX)
+  \item Sizing comparison (grouped bar chart)
+  \item Recommendation: highlight best scenario by selected metric
+  \end{itemize}
+\end{itemize}
+
+\textbf{FR-WEB-014: Scenario Naming and Organization}
+
+Users can:
+\begin{itemize}
+\item Name scenarios descriptively ("PV only", "PV + Battery", "With aFRR")
+\item Add notes/tags to scenarios
+\item Group scenarios by project
+\item Filter and search scenarios
+\end{itemize}
+
+\subsubsection{Reporting and Export}
+
+\textbf{FR-WEB-015: PDF Report Generation}
+
+"Generate Report" button creates professional PDF:
+\begin{itemize}
+\item Report template selection (brief/detailed)
+\item Include/exclude sections (checkboxes)
+\item Company logo upload (branding)
+\item Preview before download
+\end{itemize}
+
+\textbf{FR-WEB-016: Excel Export}
+
+"Export to Excel" downloads workbook with:
+\begin{itemize}
+\item Summary sheet
+\item Hourly data sheet
+\item Cash flow sheet
+\item Charts embedded (if possible)
+\end{itemize}
+
+\textbf{FR-WEB-017: Chart Downloads}
+
+Each chart has download button:
+\begin{itemize}
+\item PNG format (for presentations)
+\item SVG format (for documents)
+\item Interactive HTML (standalone file)
+\end{itemize}
+
+\subsubsection{User Experience}
+
+\textbf{FR-WEB-018: Responsive Design}
+
+Interface works on:
+\begin{itemize}
+\item Desktop browsers (primary target)
+\item Tablets (acceptable usability)
+\item Mobile (view results only, not configuration)
+\end{itemize}
+
+\textbf{FR-WEB-019: Help and Documentation}
+
+Context-sensitive help:
+\begin{itemize}
+\item "?" icons next to parameters → tooltip explanation
+\item "Help" sidebar with relevant documentation section
+\item Video tutorials for common workflows
+\item Link to full documentation
+\end{itemize}
+
+\textbf{FR-WEB-020: Error Handling}
+
+User-friendly error messages:
+\begin{itemize}
+\item Clear description of problem
+\item Suggestion for resolution
+\item Option to contact support
+\item No technical stack traces shown to end users
+\end{itemize}
+
+\subsection{System Integration Requirements}
+
+This subsection describes cross-cutting requirements affecting multiple components.
+
+\subsubsection{Data Persistence}
+
+\textbf{FR-SYS-001: Project Data Storage}
+
+System shall persist:
+\begin{itemize}
+\item Project definitions (site configuration, devices)
+\item Uploaded time series data (load profiles, prices)
+\item Optimization job metadata (submission time, status, parameters)
+\item Results (optimal sizing, economic metrics, hourly data)
+\end{itemize}
+
+Users can retrieve historical results indefinitely.
+
+\textbf{FR-SYS-002: Data Privacy}
+
+Each user/organization's data is isolated:
+\begin{itemize}
+\item No cross-user data access
+\item Secure API authentication
+\item Optional data encryption at rest
+\end{itemize}
+
+\subsubsection{Performance and Scalability}
+
+\textbf{FR-SYS-003: Concurrent Optimizations}
+
+System shall handle multiple simultaneous optimization jobs:
+\begin{itemize}
+\item Job queue with priority scheduling
+\item Parallel execution on available compute resources
+\item Fair scheduling across users
+\end{itemize}
+
+\textbf{FR-SYS-004: Large Time Series Handling}
+
+Efficiently handle 20-year hourly time series (175,200 data points):
+\begin{itemize}
+\item Compress time series for storage
+\item Stream large results rather than loading entirely in memory
+\item Optional downsampling for visualization
+\end{itemize}
+
+\subsubsection{Monitoring and Logging}
+
+\textbf{FR-SYS-005: Optimization Logging}
+
+For each optimization job, log:
+\begin{itemize}
+\item Input parameters
+\item Solver selection and configuration
+\item Optimization runtime
+\item Solution status (optimal, suboptimal, infeasible)
+\item Error messages (if failed)
+\end{itemize}
+
+\textbf{FR-SYS-006: System Health Monitoring}
+
+Monitor system health:
+\begin{itemize}
+\item API response times
+\item Optimization queue length
+\item Solver availability
+\item Error rates
+\end{itemize}
+
+Alert administrators if problems detected.
+
+\subsubsection{Deployment Flexibility}
+
+\textbf{FR-SYS-007: Cloud Deployment}
+
+Support deployment on cloud platforms:
+\begin{itemize}
+\item Containerized architecture (Docker)
+\item Horizontal scaling (add compute nodes)
+\item Load balancing for API
+\item Cloud storage for data persistence
+\end{itemize}
+
+\textbf{FR-SYS-008: On-Premises Deployment}
+
+Support on-premises deployment for data security:
+\begin{itemize}
+\item Single-server installation option
+\item Local database
+\item No external dependencies (except PVGIS, optional)
+\end{itemize}
+
+\textbf{FR-SYS-009: Disconnected Environment Deployment}
+
+Support deployment in secure, disconnected environments:
+\begin{itemize}
+\item No internet access required after installation
+\item PVGIS data pre-cached for relevant locations
+\item Local documentation
+\end{itemize}

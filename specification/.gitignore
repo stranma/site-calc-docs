@@ -1,0 +1,41 @@
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.idx
+*.ilg
+*.ind
+
+# PDF output (comment out if you want to version control PDFs)
+*.pdf
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+*.backup
+
+# Build directories
+build/
+output/
+
+# Editor files
+.vscode/
+*.kate-swp
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

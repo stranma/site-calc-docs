@@ -1,0 +1,51 @@
+\section{Product Overview}
+
+\subsection{Purpose and Value Proposition}
+
+The Site Energy System Optimization Platform enables energy consultants to design economically optimal distributed energy systems for commercial and industrial facilities. The platform addresses the challenge of determining optimal technology sizing and configuration for complex energy systems involving renewable generation, energy storage, cogeneration, and grid services.
+
+Traditional approaches rely on rule-of-thumb sizing or manual iteration of pre-specified configurations. The platform treats technology capacities and powers as optimization variables, allowing the system to identify truly optimal configurations that maximize economic returns while respecting technical and site-specific constraints. The platform provides rigorous economic analysis suitable for investment decisions and bank loan applications with 20+ year project horizons.
+
+\subsection{Target Market}
+
+The primary market is the Czech Republic, with initial focus on energy consultation firms serving commercial and industrial clients. Customer segments include consultation firms, energy service companies (ESCOs), and engineering firms specializing in distributed energy resources. These organizations require tools that provide bankable economic projections and optimal system sizing without developing and maintaining complex optimization software internally.
+
+The platform serves the growing market for distributed energy resources driven by declining costs of renewable generation and storage, increasing electricity prices, and opportunities for grid service revenues. Czech market specifics including distribution tariffs, reserved capacity fees, and automatic frequency restoration reserve (aFRR) market rules are integrated into the platform.
+
+\subsection{Optimization Capabilities}
+
+The platform performs two levels of optimization simultaneously. Sizing optimization treats technology capacities and powers as decision variables, determining optimal values for photovoltaic capacity, battery power and energy capacity, combined heat and power unit size, heat accumulator capacity, and grid connection reserved power. Operational optimization determines hourly dispatch schedules over annual time horizons, accounting for time-varying electricity prices, load profiles, and grid service opportunities.
+
+The system handles multi-material flows (electricity, heat, gas) simultaneously, enabling optimization of hybrid systems combining renewable generation, cogeneration, and thermal storage. The solver-independent architecture supports multiple optimization engines (CBC, HiGHS, Gurobi) with runtime selection based on problem characteristics and solver availability.
+
+\subsection{Economic Analysis}
+
+Economic analysis covers the complete project lifecycle with discounted cash flow methods. Investment costs (CAPEX) include equipment costs with economies of scale, installation costs, grid connection upgrades, and project development costs. Operating costs (OPEX) include fixed and variable maintenance, fuel costs, grid charges (reserved capacity fees, distribution tariffs, electricity tax), and degradation reserves.
+
+Revenue streams include energy cost savings compared to baseline grid purchase, electricity sales (feed-in), grid service revenues (aFRR capacity and energy payments), and peak demand charge reduction. Financial metrics include net present value (NPV), internal rate of return (IRR), return on investment (ROI), simple and discounted payback periods, and levelized cost of energy (LCOE). Sensitivity analysis evaluates impact of varying key parameters (prices, costs, discount rate).
+
+\subsection{System Architecture}
+
+The platform consists of three integrated components providing different access methods for different user types.
+
+\subsubsection{REST API}
+
+The REST API provides programmatic access to the optimization engine through HTTP endpoints documented with OpenAPI/Swagger specifications. The API handles project and scenario management, optimization job submission and status monitoring, results retrieval, and data export in multiple formats. The API is designed for batch processing and integration with external Monte Carlo frameworks, enabling uncertainty quantification through repeated optimization with varied input scenarios.
+
+\subsubsection{Python Client Library}
+
+The Python client library is distributed as a public package (\texttt{pip install site-calc-client}) providing high-level device abstractions (Battery, PV, CHP, HeatAccumulator). Users configure devices with physical and economic parameters without understanding internal flow systems or material balance equations. The library provides a type-safe interface with proper type hints, async support for long-running optimizations, and Pandas integration for time series data handling. The client library generates API calls from device configurations, simplifying integration into data science workflows.
+
+\subsubsection{Web Interface}
+
+The web interface provides interactive configuration and visualization for users who prefer graphical interfaces over programmatic access. The interface includes a project configuration wizard, CSV/Excel data upload for load profiles and prices, technology selection and parameter input forms, optimization execution and monitoring, results visualization with charts and graphs, side-by-side scenario comparison, and automated report generation (PDF, Excel).
+
+\subsection{Input Data and External Integration}
+
+The platform requires three categories of input data to perform optimization. Load profiles (electricity consumption, heat demand) are provided by the consultation firm based on facility metering data or load estimation. Price forecasts (electricity spot prices, grid tariffs, fuel costs) are developed by the consultation firm using their proprietary forecasting methods and market expertise. Weather-dependent generation profiles for photovoltaics may be automatically retrieved through integration with PVGIS (Photovoltaic Geographical Information System), eliminating the need for manual data preparation.
+
+This design keeps core forecasting expertise and proprietary methods within the consultation firm rather than embedding fixed prediction models in the platform. The platform's role is deterministic optimization given input scenarios, not probabilistic forecasting. Consultation firms maintain control over their analytical methods while leveraging the platform's optimization capabilities.
+
+\subsection{Deployment Options}
+
+The platform can be deployed as a cloud service for convenient access or on-premises for clients requiring data isolation. When data security requirements are critical, the service can run in a trusted third-party disconnected environment to ensure client data are processed securely without external access. This flexibility accommodates different organizational security policies while maintaining full functionality.

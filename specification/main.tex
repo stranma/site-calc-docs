@@ -1,0 +1,169 @@
+% Site Energy System Optimization Platform - Specification
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\usepackage{helvet} % Helvetica-like font
+\renewcommand{\familydefault}{\sfdefault} % Sans-serif default
+
+% Define color scheme (similar to ČEPS blue)
+\definecolor{primaryblue}{RGB}{0,102,161}
+\definecolor{lightblue}{RGB}{108,179,217}
+\definecolor{darkgray}{RGB}{64,64,64}
+\definecolor{mediumgray}{RGB}{128,128,128}
+\definecolor{lightgray}{RGB}{240,240,240}
+
+% Page geometry
+\geometry{
+    a4paper,
+    left=25mm,
+    right=25mm,
+    top=25mm,
+    bottom=25mm,
+    headheight=15pt
+}
+
+% Header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{mediumgray}\nouppercase{\leftmark}}
+\fancyhead[R]{\small\color{mediumgray}Site Optimization Platform}
+\fancyfoot[C]{\color{primaryblue}\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Section formatting (numbered sections, no "Chapter")
+\titleformat{\section}
+  {\color{primaryblue}\Large\bfseries}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\color{primaryblue}\large\bfseries}
+  {\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+  {\color{primaryblue}\normalsize\bfseries}
+  {\thesubsubsection}{1em}{}
+
+% TOC styling
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsecfont}{\color{darkgray}}
+\renewcommand{\cftsecpagefont}{\color{primaryblue}}
+
+% Hyperlinks
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    filecolor=primaryblue,
+    urlcolor=primaryblue,
+    pdftitle={Site Energy System Optimization Platform - Specification},
+    pdfauthor={},
+}
+
+% Custom box for highlights
+\newtcolorbox{infobox}{
+    colback=lightblue!10,
+    colframe=primaryblue,
+    boxrule=1pt,
+    arc=3pt,
+    left=10pt,
+    right=10pt,
+    top=10pt,
+    bottom=10pt
+}
+
+% Custom title page
+\begin{document}
+
+% Custom title page with blue background
+\begin{titlepage}
+    \pagecolor{primaryblue}
+    \color{white}
+    \vspace*{3cm}
+
+    \begin{center}
+        \Large\bfseries
+        Site Energy System\\[0.5cm]
+        Optimization Platform\\[0.5cm]
+        \Huge
+        site-calc\\[1.5cm]
+
+        \Large
+        Product Specification\\[0.5cm]
+        2025\\[3cm]
+
+        \normalsize
+        Version 0.1\\
+        \today
+    \end{center}
+
+    \vfill
+\end{titlepage}
+
+\nopagecolor % Reset to white pages
+\color{black}
+
+% Executive Summary
+\newpage
+\input{chapters/00-executive-summary}
+\newpage
+
+% Table of Contents
+\tableofcontents
+\newpage
+
+% Document History
+\section*{Document History}
+\addcontentsline{toc}{section}{Document History}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llp{8cm}}
+\toprule
+\textbf{Version} & \textbf{Date} & \textbf{Changes} \\
+\midrule
+1.0 & \today & Initial version \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+
+% Main Sections
+\input{chapters/01-product-overview}
+\input{chapters/02-use-cases}
+\input{chapters/03-functional-requirements}
+\input{chapters/04-technical-architecture}
+\input{chapters/05-czech-market}
+\input{chapters/06-examples}
+\input{chapters/07-implementation}
+
+% Appendices
+\newpage
+\appendix
+\section{Glossary}
+\input{chapters/appendix-a-glossary}
+
+\section{Mathematical Formulation}
+\input{chapters/appendix-b-mathematics}
+
+\section{Technology Parameters}
+\input{chapters/appendix-c-technology}
+
+\section{Detailed Use Case Specifications}
+\input{chapters/appendix-d-use-case-details}
+
+\end{document}
