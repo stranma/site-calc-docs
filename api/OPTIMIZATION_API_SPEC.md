@@ -956,6 +956,50 @@ For Use Case 2:
 }
 ```
 
+### 3.5 Bulk Cancel All Jobs
+
+**Endpoint:** `DELETE /api/v1/jobs`
+
+**Client Type:** ✅ **Operational and Investment**
+
+**Description:** Cancel all pending or running jobs for the authenticated user in a single request. Useful for cleanup when shutting down applications or when jobs are no longer needed.
+
+**Request Body:** None (authentication via API key header)
+
+**Response (200 OK):**
+
+```json
+{
+  "cancelled_count": 5,
+  "cancelled_jobs": [
+    "550e8400-e29b-41d4-a716-446655440000",
+    "550e8400-e29b-41d4-a716-446655440001",
+    "550e8400-e29b-41d4-a716-446655440002",
+    "550e8400-e29b-41d4-a716-446655440003",
+    "550e8400-e29b-41d4-a716-446655440004"
+  ],
+  "message": "Cancelled 5 job(s)"
+}
+```
+
+**Behavior:**
+- Only affects jobs with status `pending` or `running`
+- Completed, failed, and already-cancelled jobs are unaffected
+- Celery worker tasks are revoked and terminated
+- Returns count and list of cancelled job IDs
+- Returns `cancelled_count: 0` and empty list if no jobs to cancel
+
+**Response (401 Unauthorized):**
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Invalid or missing API key"
+  }
+}
+```
+
 ## 4. Error Handling
 
 ### 4.1 Validation Errors (400 Bad Request)
