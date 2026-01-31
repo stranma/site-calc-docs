@@ -46,7 +46,7 @@ The API supports two client types with different capabilities based on their use
 | **Endpoints** | `/optimal-bidding`, `/device-planning` | `/device-planning` only* |
 | **ANS Optimization** | ✅ Yes | ❌ No |
 | **Binary Variables** | ✅ Yes (CHP on/off) | ⚠️ Continuous (relaxed) |
-| **Timeout** | 300 seconds (5 min) | 3600 seconds (1 hour) |
+| **Timeout** | 300 seconds (5 min) | 900 seconds (15 min) |
 | **Use Case** | Day-ahead bidding, short-term dispatch | Capacity planning, investment ROI |
 
 *Investment clients receive `403 Forbidden` when attempting to access `/optimal-bidding` endpoint.
@@ -808,7 +808,15 @@ Create operational schedule with locked ancillary reservations.
 | `devices[].ancillary_services` | Allowed | **Forbidden** (must be null/omitted) |
 | `devices[].schedule` | Allowed | Allowed |
 | `locked_reservations` | Allowed | **Forbidden** (must be null/omitted) |
-| `optimization_config.time_limit_seconds` | ≤ 300 | ≤ 3600 |
+| `optimization_config.time_limit_seconds` | ≤ 300 | ≤ 900 |
+
+**Timeout Enforcement:**
+The server enforces `time_limit_seconds` via Celery task timeout. If a job exceeds its specified timeout:
+- The solver is terminated with `SoftTimeLimitExceeded`
+- Job status is set to `failed` with `error_code: "SOLVER_TIMEOUT"`
+- Any partial results are discarded
+
+Requests with `time_limit_seconds` exceeding the client type maximum will receive HTTP 400 Bad Request.
 
 **Request Body:**
 
