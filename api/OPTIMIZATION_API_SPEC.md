@@ -202,7 +202,11 @@ Investment clients will receive a validation error if this field is present:
     "capacity": 10.0,          // Energy capacity (MWh)
     "max_power": 5.0,          // Power rating (MW) for charge/discharge
     "efficiency": 0.90,        // Round-trip efficiency (0-1)
-    "initial_soc": 0.5         // Initial state of charge (0-1)
+    "initial_soc": 0.5,        // Initial state of charge (0-1)
+
+    // Optional: SOC anchoring for long-horizon optimization
+    "soc_anchor_interval_hours": 4320,  // Force SOC to target every N hours (e.g., 4320 = 6 months)
+    "soc_anchor_target": 0.5            // Target SOC at anchor points (0-1), defaults to initial_soc
   },
 
   "schedule": {
@@ -222,6 +226,15 @@ Investment clients will receive a validation error if this field is present:
   }
 }
 ```
+
+**SOC Anchoring (Investment Clients):**
+
+For multi-year optimization horizons, SOC anchors help guide the solver by forcing the battery to return to a target state of charge at regular intervals. This improves solve times for very long horizons (4+ years) without affecting solution quality.
+
+- `soc_anchor_interval_hours`: Interval in hours between anchor points (e.g., 4320 = 6 months, 8760 = 1 year)
+- `soc_anchor_target`: Target SOC value (0-1) at each anchor point. Defaults to `initial_soc` if not specified.
+
+Both fields are optional and only recommended for investment planning with horizons exceeding 2 years.
 
 #### 2.3.2 CHP (Combined Heat and Power)
 
@@ -1343,5 +1356,5 @@ Investment client using 15-minute resolution:
 ---
 
 **Document Status:** Draft
-**Last Updated:** 2025-12-17
-**Version:** 1.0
+**Last Updated:** 2026-01-31
+**Version:** 1.1
