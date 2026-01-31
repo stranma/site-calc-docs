@@ -1071,7 +1071,7 @@ For Use Case 2:
 ```json
 {
   "error": {
-    "code": "timeout",
+    "code": "SOLVER_TIMEOUT",
     "message": "Solver exceeded time limit of 300 seconds",
     "details": {
       "best_solution_gap": 5.2  // Percentage gap from optimal
