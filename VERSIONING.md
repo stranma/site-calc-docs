@@ -186,25 +186,29 @@ repos:
 ### Minor/Major Release (Coordinated)
 
 1. Decide on new version (e.g., `1.1.0`)
-2. Run version bump:
+2. **Update changelogs:**
+   - `client-investment/CHANGELOG.md`
+   - `client-operational/CHANGELOG.md` (if applicable)
+   - `site_calc_docs/VERSIONING.md` version history table
+3. Run version bump:
    ```bash
    python scripts/bump_version.py minor
    ```
-3. Run tests:
+4. Run tests:
    ```bash
    cd site_calc && uv run pytest tests/
    cd client-investment && uv run pytest tests/
    cd server && uv run pytest tests/
    ```
-4. Commit and tag:
+5. Commit and tag:
    ```bash
    git add -A
    git commit -m "chore: Bump version to 1.1.0"
    git tag v1.1.0
    git push && git push --tags
    ```
-5. Deploy server with new version
-6. Publish client packages to PyPI
+6. Deploy server with new version
+7. Publish client packages to PyPI
 
 ### Patch Release (Individual)
 
@@ -249,6 +253,7 @@ Or manually ensure both files have the same version.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1.0 | 2026-02-01 | SOC anchoring, HiGHS solver default, version validation, timeout control |
 | 1.0.0 | 2025-01-31 | Initial synchronized release |
 
 ---
