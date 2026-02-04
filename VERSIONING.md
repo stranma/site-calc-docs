@@ -255,7 +255,7 @@ Or manually ensure both files have the same version.
 |---------|---------|-----|----------|
 | Core Library | 1.2.0 | - | private |
 | Server | 1.2.0 | v1.2.0 | - |
-| Investment Client | 1.2.1 | v1.2.1 | PyPI |
+| Investment Client | 1.2.2 | v1.2.2 | PyPI |
 | Operational Client | 1.2.0 | - | PyPI |
 
 ---
@@ -264,6 +264,7 @@ Or manually ensure both files have the same version.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.2 | 2026-02-04 | MCP server for LLM-driven investment planning (investment client patch) |
 | 1.2.0 | 2026-02-03 | Multi-environment support, API key lifecycle via PostgreSQL, infrastructure cleanup |
 | 1.1.0 | 2026-02-01 | SOC anchoring, HiGHS solver default, version validation, timeout control |
 | 1.0.0 | 2025-01-31 | Initial synchronized release |
