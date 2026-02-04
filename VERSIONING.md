@@ -255,7 +255,7 @@ Or manually ensure both files have the same version.
 |---------|---------|-----|----------|
 | Core Library | 1.2.0 | - | private |
 | Server | 1.2.0 | v1.2.0 | - |
-| Investment Client | 1.2.3 | v1.2.3 | PyPI |
+| Investment Client | 1.2.4 | v1.2.4 | PyPI |
 | Operational Client | 1.2.0 | - | PyPI |
 
 ---
@@ -264,6 +264,7 @@ Or manually ensure both files have the same version.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.4 | 2026-02-04 | get_version MCP tool (investment client patch) |
 | 1.2.3 | 2026-02-04 | save_data_file MCP tool, INVESTMENT_DATA_DIR config (investment client patch) |
 | 1.2.2 | 2026-02-04 | MCP server for LLM-driven investment planning (investment client patch) |
 | 1.2.0 | 2026-02-03 | Multi-environment support, API key lifecycle via PostgreSQL, infrastructure cleanup |
