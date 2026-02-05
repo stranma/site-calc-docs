@@ -264,6 +264,7 @@ Or manually ensure both files have the same version.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.7 | 2026-02-05 | fetch_url MCP tool, set_timespan intervals param (investment client patch) |
 | 1.2.4 | 2026-02-04 | get_version MCP tool (investment client patch) |
 | 1.2.3 | 2026-02-04 | save_data_file MCP tool, INVESTMENT_DATA_DIR config (investment client patch) |
 | 1.2.2 | 2026-02-04 | MCP server for LLM-driven investment planning (investment client patch) |
