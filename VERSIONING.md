@@ -253,9 +253,9 @@ Or manually ensure both files have the same version.
 
 | Package | Version | Tag | Registry |
 |---------|---------|-----|----------|
-| Core Library | 1.2.0 | - | private |
+| Core Library | 1.2.1 | - | private |
 | Server | 1.2.0 | v1.2.0 | - |
-| Investment Client | 1.2.4 | v1.2.4 | PyPI |
+| Investment Client | 1.2.8 | v1.2.8 | PyPI |
 | Operational Client | 1.2.0 | - | PyPI |
 
 ---
@@ -264,10 +264,14 @@ Or manually ensure both files have the same version.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.8 | 2026-02-06 | Remove visualization dashboard, fix CSV metadata row count (investment client patch) |
 | 1.2.7 | 2026-02-05 | fetch_url MCP tool, set_timespan intervals param (investment client patch) |
+| 1.2.6 | 2026-02-05 | Interactive HTML visualization dashboard (investment client patch, later removed in 1.2.8) |
+| 1.2.5 | 2026-02-05 | Windows timezone fix: tzdata runtime dependency (investment client patch) |
 | 1.2.4 | 2026-02-04 | get_version MCP tool (investment client patch) |
 | 1.2.3 | 2026-02-04 | save_data_file MCP tool, INVESTMENT_DATA_DIR config (investment client patch) |
 | 1.2.2 | 2026-02-04 | MCP server for LLM-driven investment planning (investment client patch) |
+| 1.2.1 | 2026-02-03 | README Quick Start fixes (investment client + core library patch) |
 | 1.2.0 | 2026-02-03 | Multi-environment support, API key lifecycle via PostgreSQL, infrastructure cleanup |
 | 1.1.0 | 2026-02-01 | SOC anchoring, HiGHS solver default, version validation, timeout control |
 | 1.0.0 | 2025-01-31 | Initial synchronized release |

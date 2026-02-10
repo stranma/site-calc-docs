@@ -137,12 +137,16 @@ REST API Contract (api/OPTIMIZATION_API_SPEC.md)
 While this folder contains **shared documentation**, each package has its own specific docs:
 
 ### **Server** (`../server/docs/`)
-- `SERVER_SPEC.md` - Server architecture
-- `IMPLEMENTATION_PLAN.md` - Development roadmap
-- `SITE_CALC_INTEGRATION.md` - Core library integration
+- `SERVER_SPEC.md` - Server architecture and REST API specification
+- `IMPLEMENTATION_PLAN.md` - Development roadmap and phase tracking
+- `SERVER_STATUS.md` - Current implementation status
+- `SITE_CALC2_INTEGRATION.md` - Core library integration guide
+- `API_KEY_SETUP.md` - API key creation and management
+- `GRAFANA_SETUP.md` - Monitoring dashboard setup
 
 ### **Client - Investment** (`../client-investment/docs/`)
 - `INVESTMENT_CLIENT_SPEC.md` - Python SDK usage guide
+- `MCP_SERVER_SPEC.md` - MCP server for LLM-driven investment planning (17 tools)
 
 ### **Client - Operational** (`../client-operational/docs/`)
 - `OPERATIONAL_CLIENT_SPEC.md` - Python SDK usage guide
@@ -192,5 +196,5 @@ See `../SECURITY.md` for complete security policy.
 
 ---
 
-**Last Updated:** 2025-12-17
+**Last Updated:** 2026-02-06
 **Maintained by:** Site-Calc core team
